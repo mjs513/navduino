@@ -7,8 +7,8 @@
 #define rad2deg(angle) (angle * 180.0 / M_PI)
 
 
-const bool DEGREES = false;
 const bool RADIANS = true;
+const bool DEGREES = false;
 
 const bool NED_TO_BODY = true;
 const bool BODY_TO_NED = false;

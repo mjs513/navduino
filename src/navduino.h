@@ -11,6 +11,12 @@
 using namespace Eigen;
 
 
+void printVec2f(Vector2f vec, const int& p = 5)
+{
+    Serial.println(vec(0), p);
+    Serial.println(vec(1), p);
+}
+
 void printVec3f(Vector3f vec, const int& p = 5)
 {
     Serial.println(vec(0), p);
@@ -136,9 +142,9 @@ Vector3f dcm2angle(const Matrix3f& dcm, const bool& unit_rad = true, const int& 
 /*
 Convert a sequence of rotation angles to an equivalent unit quaternion
 */
-Quaternionf angle2quat(Vector3f angles, const bool& input_unit_rad = true, const int& rotation_sequence = 321, const bool& NED_to_body = true)
+Quaternionf angle2quat(Vector3f angles, const bool& unit_rad = true, const int& rotation_sequence = 321, const bool& NED_to_body = true)
 {
-    Quaternionf quat(angle2dcm(angles, input_unit_rad, rotation_sequence, NED_to_body));
+    Quaternionf quat(angle2dcm(angles, unit_rad, rotation_sequence, NED_to_body));
     return quat;
 }
 
@@ -147,9 +153,9 @@ Quaternionf angle2quat(Vector3f angles, const bool& input_unit_rad = true, const
 Convert a unit quaternion to the equivalent sequence of angles of rotation
 about the rotation_sequence axes.
 */
-Vector3f quat2angle(Quaternionf& quat, const bool& output_unit_rad = true, const int& rotation_sequence = 321, const bool& NED_to_body = true)
+Vector3f quat2angle(Quaternionf& quat, const bool& unit_rad = true, const int& rotation_sequence = 321, const bool& NED_to_body = true)
 {
-    return dcm2angle(quat.toRotationMatrix(), output_unit_rad, rotation_sequence, NED_to_body);
+    return dcm2angle(quat.toRotationMatrix(), unit_rad, rotation_sequence, NED_to_body);
 }
 
 
@@ -175,19 +181,22 @@ Quaternionf dcm2quat(const Matrix3f& C)
 /*
 Calculate radius of curvature in the prime vertical(East - West) and
 meridian(North - South) at a given latitude.
+
+https://en.wikipedia.org/wiki/Earth_radius
 */
-Vector2f earthrad(const float& lat, const bool& lat_unit_deg = true)
+Vector2f earthrad(const float& lat, const bool& unit_rad = false)
 {
     float _lat = lat;
 
-    if (lat_unit_deg)
+    if (!unit_rad)
         _lat = deg2rad(_lat);
 
-    float R_N = a / sqrt(1 - ecc_sqrd * pow(sin(_lat), 2));
-    float R_M = a * (1 - ecc_sqrd) / pow(1 - ecc_sqrd * pow(sin(_lat), 2), 1.5);
+    float R_N = a / sqrt(1 - (ecc_sqrd * pow(sin(_lat), 2)));
+    float R_M = (a * (1 - ecc_sqrd)) / pow(1 - (ecc_sqrd * pow(sin(_lat), 2)), 1.5);
 
     Vector2f out;
-    out << R_N, R_M;
+    out << R_N, // Earth's prime-vertical radius of curvature
+           R_M; // Earth's meridional radius of curvature
 
     return out;
 }
@@ -196,25 +205,25 @@ Vector2f earthrad(const float& lat, const bool& lat_unit_deg = true)
 /*
 Calculate Latitude, Longitude, Altitude Rate given locally tangent velocity
 */
-Vector3f llarate(const float& VN, const float& VE, const float& VD, const float& lat, const float& alt, const bool& lat_unit_deg = true)
+Vector3f llarate(const float& VN, const float& VE, const float& VD, const float& lat, const float& alt, const bool& unit_rad = false)
 {
-    Vector2f eradvec = earthrad(lat, lat_unit_deg);
+    Vector2f eradvec = earthrad(lat, unit_rad);
     float Rew = eradvec(0);
     float Rns = eradvec(1);
 
     Vector3f lla_dot;
 
-    if (lat_unit_deg)
-    {
-        lla_dot << rad2deg(VN / (Rns + alt)),
-                   rad2deg(VE / (Rew + alt) / cos(deg2rad(lat))),
-                   -VD;
-    }
-    else
+    if (unit_rad)
     {
         lla_dot << VN / (Rns + alt),
                    VE / (Rew + alt) / cos(deg2rad(lat)),
-                   -VD;
+                  -VD;
+    }
+    else
+    {
+        lla_dot << rad2deg(VN / (Rns + alt)),
+                   rad2deg(VE / (Rew + alt) / cos(deg2rad(lat))),
+                  -VD;
     }
 
     return lla_dot;
@@ -222,14 +231,13 @@ Vector3f llarate(const float& VN, const float& VE, const float& VD, const float&
 
 
 /*
-Calculate the earth rotation rate resolved on NED axes
-given VN, VE, VD, lat, and alt.
+Calculate the earth rotation rate resolved on NED axes given lat.
 */
-Vector3f earthrate(const float& lat, const bool& lat_unit_deg = true)
+Vector3f earthrate(const float& lat, const bool& unit_rad = false)
 {
     float _lat = lat;
 
-    if (lat_unit_deg)
+    if (!unit_rad)
         _lat = deg2rad(_lat);
 
     Vector3f e;
@@ -246,9 +254,14 @@ Calculate navigation / transport rate given VN, VE, VD, lat, and alt.
 Navigation / transport rate is the angular velocity of the NED frame relative
 to the earth ECEF frame.
 */
-Vector3f navrate(const float& VN, const float& VE, const float& VD, const float& lat, const float& alt, const bool& lat_unit_deg = true)
+Vector3f navrate(const float& VN, const float& VE, const float& VD, const float& lat, const float& alt, const bool& unit_rad = false)
 {
-    Vector2f eradvec = earthrad(lat, lat_unit_deg);
+    float _lat = lat;
+
+    if (!unit_rad)
+        _lat = deg2rad(_lat);
+
+    Vector2f eradvec = earthrad(lat, unit_rad);
     float Rew = eradvec(0);
     float Rns = eradvec(1);
 
@@ -256,7 +269,7 @@ Vector3f navrate(const float& VN, const float& VE, const float& VD, const float&
 
     rho << VE / (Rew + alt),
           -VN / (Rns + alt),
-          -VE * tan(deg2rad(lat)) / (Rew + alt);
+          -VE * tan(_lat) / (Rew + alt);
 
     return rho;
 }
@@ -265,15 +278,15 @@ Vector3f navrate(const float& VN, const float& VE, const float& VD, const float&
 /*
 Convert Latitude, Longitude, Altitude, to ECEF position
 */
-Vector3f lla2ecef(const float& lat, const float& lon, const float& alt, const bool& lat_unit_deg = true)
+Vector3f lla2ecef(const float& lat, const float& lon, const float& alt, const bool& unit_rad = false)
 {
-    Vector2f eradvec = earthrad(lat, lat_unit_deg);
+    Vector2f eradvec = earthrad(lat, unit_rad);
     float Rew = eradvec(0);
 
     float _lat = lat;
     float _lon = lon;
 
-    if (lat_unit_deg)
+    if (!unit_rad)
     {
         _lat = deg2rad(_lat);
         _lon = deg2rad(_lon);
@@ -292,8 +305,10 @@ Vector3f lla2ecef(const float& lat, const float& lon, const float& alt, const bo
 /*
 Calculate the Latitude, Longitudeand Altitude of a point located on earth
 given the ECEF Coordinates.
+
+https://en.wikipedia.org/wiki/Geographic_coordinate_conversion
 */
-Vector3f ecef2lla(const Vector3f& ecef, const bool& lat_unit_deg = true)
+Vector3f ecef2lla(const Vector3f& ecef, const bool& unit_rad = false)
 {
     float x = ecef(0);
     float y = ecef(1);
@@ -325,23 +340,7 @@ Vector3f ecef2lla(const Vector3f& ecef, const bool& lat_unit_deg = true)
     float h   = U * (1 - (b_sqrd / (a * V)));
     float lat = atan2(z + (ecc_prime_sqrd * z0), p);
 
-    Serial.println();
-    Serial.print("p: "); Serial.println(p);
-    Serial.print("p_sqrd: "); Serial.print(p_sqrd / 1e13); Serial.println("e13");
-    Serial.print("F: "); Serial.print(F / 1e28); Serial.println("e28");
-    Serial.print("G: "); Serial.print(G / 1e13); Serial.println("e13");
-    Serial.print("c: "); Serial.println(c);
-    Serial.print("s: "); Serial.println(s);
-    Serial.print("k: "); Serial.println(k);
-    Serial.print("P: "); Serial.println(P);
-    Serial.print("Q: "); Serial.println(Q);
-    Serial.print("r0: "); Serial.println(r0);
-    Serial.print("U: "); Serial.println(U);
-    Serial.print("V: "); Serial.println(V);
-    Serial.print("z0: "); Serial.println(z0);
-    Serial.println();
-
-    if (lat_unit_deg)
+    if (!unit_rad)
     {
         lat = rad2deg(lat);
         lon = rad2deg(lon);
