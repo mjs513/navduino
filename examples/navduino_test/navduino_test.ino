@@ -7,29 +7,29 @@ void setup()
   while(!Serial);
 
   Vector3f euler;
-  euler << 45,  // x - roll
-           10,  // y - pitch
-           -60; // z - yaw
+  euler << 45, // x - roll
+           10, // y - pitch
+          -60; // z - yaw
 
-  Matrix3f a2dcm = angle2dcm(euler, DEGREES, 321, BODY_TO_NED);
+  Matrix3f a2dcm = angle2dcm(euler, DEGREES, 321, NED_TO_BODY);
 
   Serial.println("angle2dcm");
   printMat3f(a2dcm);
   Serial.println();
 
-  Vector3f dcm2a = dcm2angle(a2dcm, DEGREES, 321, BODY_TO_NED);
+  Vector3f dcm2a = dcm2angle(a2dcm, DEGREES, 321, NED_TO_BODY);
 
   Serial.println("dcm2angle");
   printVec3f(dcm2a);
   Serial.println();
 
-  Quaternionf a2quat = angle2quat(euler, DEGREES, 321, BODY_TO_NED);
+  Quaternionf a2quat = angle2quat(euler, DEGREES, 321, NED_TO_BODY);
   
   Serial.println("angle2quat");
   printQuatf(a2quat);
   Serial.println();
 
-  Vector3f quat2a = quat2angle(a2quat, DEGREES, 321, BODY_TO_NED);
+  Vector3f quat2a = quat2angle(a2quat, DEGREES, 321, NED_TO_BODY);
   
   Serial.println("quat2angle");
   printVec3f(quat2a);
@@ -53,7 +53,17 @@ void setup()
   printVec2f(erad);
   Serial.println();
 
-  Vector3f llar = llarate(100, 200, -100, 20, 250, DEGREES);
+  Vector3f lla;
+  lla << 20,
+        -30,
+         250;
+  
+  Vector3f vned;
+  vned << 100,
+          200,
+         -100;
+
+  Vector3f llar = llarate(vned, lla, DEGREES);
   
   Serial.println("llarate");
   printVec3f(llar);
@@ -65,13 +75,13 @@ void setup()
   printVec3f(erate, 10);
   Serial.println();
 
-  Vector3f nrate = navrate(100, 200, -100, 20, 250, DEGREES);
+  Vector3f nrate = navrate(vned, lla, DEGREES);
   
   Serial.println("navrate");
   printVec3f(nrate, 10);
   Serial.println();
 
-  Vector3f l2ecef = lla2ecef(20, -30, 250, DEGREES);
+  Vector3f l2ecef = lla2ecef(lla, DEGREES);
   
   Serial.println("lla2ecef");
   printVec3f(l2ecef);
@@ -81,6 +91,46 @@ void setup()
   
   Serial.println("ecef2lla");
   printVec3f(ecef2l);
+  Serial.println();
+
+  Vector3f lla_ref;
+  lla_ref << 20.01,
+            -30.01,
+             260;
+
+  Vector3f ecef2n = ecef2ned(l2ecef, lla_ref, DEGREES);
+  
+  Serial.println("ecef2ned");
+  printVec3f(ecef2n);
+  Serial.println();
+
+  Vector3f l2ned = lla2ned(ecef2l, lla_ref, DEGREES);
+  
+  Serial.println("lla2ned");
+  printVec3f(l2ned);
+  Serial.println();
+
+  Vector3f ned3e = ned2ecef(l2ned, lla_ref, DEGREES);
+  
+  Serial.println("ned2ecef");
+  printVec3f(ned3e);
+  Serial.println();
+
+  Vector3f ned3l = ned2lla(l2ned, lla_ref, DEGREES);
+  
+  Serial.println("ned2lla");
+  printVec3f(ned3l);
+  Serial.println();
+  
+  Vector3f w;
+  w << 1,
+       2,
+       3;
+
+  Matrix3f wk = skew(w);
+  
+  Serial.println("ned2lla");
+  printMat3f(wk);
   Serial.println();
 }
 

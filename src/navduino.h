@@ -11,20 +11,20 @@
 using namespace Eigen;
 
 
-void printVec2f(Vector2f vec, const int& p = 5)
+void printVec2f(const Vector2f& vec, const int& p = 5)
 {
     Serial.println(vec(0), p);
     Serial.println(vec(1), p);
 }
 
-void printVec3f(Vector3f vec, const int& p = 5)
+void printVec3f(const Vector3f& vec, const int& p = 5)
 {
     Serial.println(vec(0), p);
     Serial.println(vec(1), p);
     Serial.println(vec(2), p);
 }
 
-void printQuatf(Quaternionf quat, const int& p = 5)
+void printQuatf(const Quaternionf& quat, const int& p = 5)
 {
     Serial.println(quat.x(), p);
     Serial.println(quat.y(), p);
@@ -32,7 +32,7 @@ void printQuatf(Quaternionf quat, const int& p = 5)
     Serial.println(quat.w(), p);
 }
 
-void printMat3f(Matrix3f mat, const int& p = 5)
+void printMat3f(const Matrix3f& mat, const int& p = 5)
 {
     Serial.print(mat(0, 0), p); Serial.print(", "); Serial.print(mat(0, 1), p); Serial.print(", "); Serial.println(mat(0, 2), p);
     Serial.print(mat(1, 0), p); Serial.print(", "); Serial.print(mat(1, 1), p); Serial.print(", "); Serial.println(mat(1, 2), p);
@@ -43,7 +43,7 @@ void printMat3f(Matrix3f mat, const int& p = 5)
 /*
 This function converts Euler Angle into Direction Cosine Matrix(DCM).
 */
-Matrix3f angle2dcm(Vector3f angles, const bool& unit_rad = true, const int& rotation_sequence = 321, const bool& NED_to_body = true)
+Matrix3f angle2dcm(const Vector3f& angles, const bool& unit_rad = true, const int& rotation_sequence = 321, const bool& NED_to_body = true)
 {
     Matrix3f output(3, 3);
 
@@ -142,7 +142,7 @@ Vector3f dcm2angle(const Matrix3f& dcm, const bool& unit_rad = true, const int& 
 /*
 Convert a sequence of rotation angles to an equivalent unit quaternion
 */
-Quaternionf angle2quat(Vector3f angles, const bool& unit_rad = true, const int& rotation_sequence = 321, const bool& NED_to_body = true)
+Quaternionf angle2quat(const Vector3f& angles, const bool& unit_rad = true, const int& rotation_sequence = 321, const bool& NED_to_body = true)
 {
     Quaternionf quat(angle2dcm(angles, unit_rad, rotation_sequence, NED_to_body));
     return quat;
@@ -153,7 +153,7 @@ Quaternionf angle2quat(Vector3f angles, const bool& unit_rad = true, const int& 
 Convert a unit quaternion to the equivalent sequence of angles of rotation
 about the rotation_sequence axes.
 */
-Vector3f quat2angle(Quaternionf& quat, const bool& unit_rad = true, const int& rotation_sequence = 321, const bool& NED_to_body = true)
+Vector3f quat2angle(const Quaternionf& quat, const bool& unit_rad = true, const int& rotation_sequence = 321, const bool& NED_to_body = true)
 {
     return dcm2angle(quat.toRotationMatrix(), unit_rad, rotation_sequence, NED_to_body);
 }
@@ -203,34 +203,6 @@ Vector2f earthrad(const float& lat, const bool& unit_rad = false)
 
 
 /*
-Calculate Latitude, Longitude, Altitude Rate given locally tangent velocity
-*/
-Vector3f llarate(const float& VN, const float& VE, const float& VD, const float& lat, const float& alt, const bool& unit_rad = false)
-{
-    Vector2f eradvec = earthrad(lat, unit_rad);
-    float Rew = eradvec(0);
-    float Rns = eradvec(1);
-
-    Vector3f lla_dot;
-
-    if (unit_rad)
-    {
-        lla_dot << VN / (Rns + alt),
-                   VE / (Rew + alt) / cos(deg2rad(lat)),
-                  -VD;
-    }
-    else
-    {
-        lla_dot << rad2deg(VN / (Rns + alt)),
-                   rad2deg(VE / (Rew + alt) / cos(deg2rad(lat))),
-                  -VD;
-    }
-
-    return lla_dot;
-}
-
-
-/*
 Calculate the earth rotation rate resolved on NED axes given lat.
 */
 Vector3f earthrate(const float& lat, const bool& unit_rad = false)
@@ -250,16 +222,55 @@ Vector3f earthrate(const float& lat, const bool& unit_rad = false)
 
 
 /*
+Calculate Latitude, Longitude, Altitude Rate given locally tangent velocity
+*/
+Vector3f llarate(const Vector3f& vned, const Vector3f& lla, const bool& unit_rad = false)
+{
+    float VN = vned(0);
+    float VE = vned(1);
+    float VD = vned(2);
+
+    float lat = lla(0);
+    float alt = lla(2);
+
+    Vector2f eradvec = earthrad(lat, unit_rad);
+    float Rew = eradvec(0);
+    float Rns = eradvec(1);
+
+    Vector3f lla_dot;
+
+    if (unit_rad)
+    {
+        lla_dot << VN / (Rns + alt),
+            VE / (Rew + alt) / cos(deg2rad(lat)),
+            -VD;
+    }
+    else
+    {
+        lla_dot << rad2deg(VN / (Rns + alt)),
+            rad2deg(VE / (Rew + alt) / cos(deg2rad(lat))),
+            -VD;
+    }
+
+    return lla_dot;
+}
+
+
+/*
 Calculate navigation / transport rate given VN, VE, VD, lat, and alt.
 Navigation / transport rate is the angular velocity of the NED frame relative
 to the earth ECEF frame.
 */
-Vector3f navrate(const float& VN, const float& VE, const float& VD, const float& lat, const float& alt, const bool& unit_rad = false)
+Vector3f navrate(const Vector3f& vned, const Vector3f& lla, const bool& unit_rad = false)
 {
-    float _lat = lat;
+    float VN = vned(0);
+    float VE = vned(1);
+
+    float lat = lla(0);
+    float alt = lla(2);
 
     if (!unit_rad)
-        _lat = deg2rad(_lat);
+        lat = deg2rad(lat);
 
     Vector2f eradvec = earthrad(lat, unit_rad);
     float Rew = eradvec(0);
@@ -269,7 +280,7 @@ Vector3f navrate(const float& VN, const float& VE, const float& VD, const float&
 
     rho << VE / (Rew + alt),
           -VN / (Rns + alt),
-          -VE * tan(_lat) / (Rew + alt);
+          -VE * tan(lat) / (Rew + alt);
 
     return rho;
 }
@@ -278,25 +289,26 @@ Vector3f navrate(const float& VN, const float& VE, const float& VD, const float&
 /*
 Convert Latitude, Longitude, Altitude, to ECEF position
 */
-Vector3f lla2ecef(const float& lat, const float& lon, const float& alt, const bool& unit_rad = false)
+Vector3f lla2ecef(const Vector3f& lla, const bool& unit_rad = false)
 {
+    float lat = lla(0);
+    float lon = lla(1);
+    float alt = lla(2);
+
     Vector2f eradvec = earthrad(lat, unit_rad);
     float Rew = eradvec(0);
 
-    float _lat = lat;
-    float _lon = lon;
-
     if (!unit_rad)
     {
-        _lat = deg2rad(_lat);
-        _lon = deg2rad(_lon);
+        lat = deg2rad(lat);
+        lon = deg2rad(lon);
     }
 
     Vector3f ecef;
 
-    ecef << (Rew + alt) * cos(_lat) * cos(_lon),
-            (Rew + alt) * cos(_lat) * sin(_lon),
-            ((1 - ecc_sqrd) * Rew + alt) * sin(_lat);
+    ecef << (Rew + alt) * cos(lat) * cos(lon),
+            (Rew + alt) * cos(lat) * sin(lon),
+            ((1 - ecc_sqrd) * Rew + alt) * sin(lat);
 
     return ecef;
 }
@@ -356,161 +368,125 @@ Vector3f ecef2lla(const Vector3f& ecef, const bool& unit_rad = false)
 }
 
 
-    /*
-    def lla2ned(lat, lon, alt, lat_ref, lon_ref, alt_ref, latlon_unit = 'deg', alt_unit = 'm', model = 'wgs84') :
-    """
-    Convert Latitude, Longitude, Altitude to its resolution in the NED
-    coordinate.The center of the NED coordiante is given by lat_ref, lon_ref,
-    and alt_ref.
+/*
+Transform a vector resolved in ECEF coordinate to its resolution in the NED
+coordinate.The center of the NED coordiante is given by lat_ref, lon_ref,
+and alt_ref.
 
-    For example, this can be used to convert GPS data to a local NED frame.
-    """
-    ecef = lla2ecef(lat, lon, alt, latlon_unit = latlon_unit,
-        alt_unit = alt_unit, model = model)
-    ecef0 = lla2ecef(lat_ref, lon_ref, alt_ref,
-        latlon_unit = latlon_unit,
-        alt_unit = alt_unit, model = model)
-    ned = ecef2ned(ecef - ecef0, lat_ref, lon_ref, alt_ref,
-        latlon_unit = latlon_unit, alt_unit = alt_unit, model = model)
-    return ned
+https://en.wikipedia.org/wiki/Local_tangent_plane_coordinates
+*/
+Vector3f ecef2ned(const Vector3f& ecef, const Vector3f& lla_ref, const bool& unit_rad = false)
+{
+    float lat_ref = lla_ref(0);
+    float lon_ref = lla_ref(1);
 
-    def ned2lla(ned, lat_ref, lon_ref, alt_ref, latlon_unit = 'deg', alt_unit = 'm', model = 'wgs84') :
-    """
-    Calculate the Latitude, Longitudeand Altitude of points given by NED coordinates
-    where NED origin given by lat_ref, lon_ref, and alt_ref.
-        """
+    if (!unit_rad)
+    {
+        lat_ref = deg2rad(lat_ref);
+        lon_ref = deg2rad(lon_ref);
+    }
 
-        ecef = ned2ecef(ned, lat_ref, lon_ref, alt_ref, latlon_unit = latlon_unit,
-            alt_unit = alt_unit,
-            model = model)
-        // Add vector to ecef representation of NED - origin
-        ecef_ref = lla2ecef(lat_ref, lon_ref, alt_ref, latlon_unit = latlon_unit,
-            alt_unit = alt_unit,
-            model = model)
-        ecef += ecef_ref
+    Matrix3f C(3, 3);
 
-        lla = ecef2lla(ecef, latlon_unit = latlon_unit)
+    C(0, 0) = -sin(lat_ref) * cos(lon_ref);
+    C(0, 1) = -sin(lat_ref) * sin(lon_ref);
+    C(0, 2) =  cos(lat_ref);
 
-        return lla
+    C(1, 0) = -sin(lon_ref);
+    C(1, 1) =  cos(lon_ref);
+    C(1, 2) =  0;
+
+    C(2, 0) = -cos(lat_ref) * cos(lon_ref);
+    C(2, 1) = -cos(lat_ref) * sin(lon_ref);
+    C(2, 2) = -sin(lat_ref);
+
+    Vector3f ecef_ref = lla2ecef(lla_ref, unit_rad);
+    
+    Vector3f ned;
+    ned = C * (ecef - ecef_ref);
+
+    return ned;
+}
 
 
-        def ned2ecef(ned, lat_ref, lon_ref, alt_ref, latlon_unit = 'deg', alt_unit = 'm', model = 'wgs84') :
-        """
-        Transform a vector resolved in NED(origin given by lat_ref, lon_ref, and alt_ref)
-        coordinates to its ECEF representation.
-        """
-        lat_ref, N1 = _input_check_Nx1(lat_ref)
-        lon_ref, N2 = _input_check_Nx1(lon_ref)
-        alt_ref, N3 = _input_check_Nx1(alt_ref)
+/*
+Convert Latitude, Longitude, Altitude to its resolution in the NED
+coordinate.The center of the NED coordiante is given by lat_ref, lon_ref,
+and alt_ref.
 
-        if ((N1 != 1) or (N2 != 1) or (N3 != 1)) :
-            raise ValueError('Reference Location can only be 1')
+For example, this can be used to convert GPS data to a local NED frame.
+*/
+Vector3f lla2ned(const Vector3f& lla, const Vector3f& lla_ref, const bool& unit_rad = false)
+{
+    Vector3f ecef = lla2ecef(lla, unit_rad);
+    Vector3f ned  = ecef2ned(ecef, lla_ref, unit_rad);
 
-            ned, N = _input_check_Nx3(ned)
+    return ned;
+}
 
-            ned = ned.T
 
-            C = zeros((3, 3))
+/*
+Transform a vector resolved in NED(origin given by lat_ref, lon_ref, and alt_ref)
+coordinates to its ECEF representation.
+*/
+Vector3f ned2ecef(const Vector3f& ned, const Vector3f& lla_ref, const bool& unit_rad = false)
+{
+    float lat_ref = lla_ref(0);
+    float lon_ref = lla_ref(1);
 
-            if (latlon_unit == 'deg') :
-                lat_ref = deg2rad(lat_ref)
-                lon_ref = deg2rad(lon_ref)
-                elif(latlon_unit == 'rad') :
-                pass
-            else:
-    raise ValueError('Input unit unknown')
+    if (!unit_rad)
+    {
+        lat_ref = deg2rad(lat_ref);
+        lon_ref = deg2rad(lon_ref);
+    }
 
-        C[0, 0] = -sin(lat_ref) * cos(lon_ref)
-        C[0, 1] = -sin(lat_ref) * sin(lon_ref)
-        C[0, 2] = cos(lat_ref)
+    Matrix3f C(3, 3);
 
-        C[1, 0] = -sin(lon_ref)
-        C[1, 1] = cos(lon_ref)
-        C[1, 2] = 0
+    C(0, 0) = -sin(lat_ref) * cos(lon_ref);
+    C(0, 1) = -sin(lat_ref) * sin(lon_ref);
+    C(0, 2) = cos(lat_ref);
 
-        C[2, 0] = -cos(lat_ref) * cos(lon_ref)
-        C[2, 1] = -cos(lat_ref) * sin(lon_ref)
-        C[2, 2] = -sin(lat_ref)
+    C(1, 0) = -sin(lon_ref);
+    C(1, 1) = cos(lon_ref);
+    C(1, 2) = 0;
 
-        // C defines transoformation : ned = C * ecef.Hence used transpose.
-        ecef = dot(C.T, ned)
-        ecef = ecef.T
+    C(2, 0) = -cos(lat_ref) * cos(lon_ref);
+    C(2, 1) = -cos(lat_ref) * sin(lon_ref);
+    C(2, 2) = -sin(lat_ref);
 
-        if (N == 1) :
-            ecef = ecef.reshape(3)
+    Vector3f ecef;
+    ecef = C.transpose() * ned;
 
-            return ecef
+    return ecef;
+}
 
-            def ecef2ned(ecef, lat_ref, lon_ref, alt_ref, latlon_unit = 'deg', alt_unit = 'm', model = 'wgs84') :
-            """
-            Transform a vector resolved in ECEF coordinate to its resolution in the NED
-            coordinate.The center of the NED coordiante is given by lat_ref, lon_ref,
-            and alt_ref.
-            """
-            lat_ref, N1 = _input_check_Nx1(lat_ref)
-            lon_ref, N2 = _input_check_Nx1(lon_ref)
-            alt_ref, N3 = _input_check_Nx1(alt_ref)
 
-            if ((N1 != 1) or (N2 != 1) or (N3 != 1)) :
-                raise ValueError('Reference Location can only be 1')
+/*
+Calculate the Latitude, Longitudeand Altitude of points given by NED coordinates
+where NED origin given by lat_ref, lon_ref, and alt_ref.
+*/
+Vector3f ned2lla(const Vector3f& ned, const Vector3f& lla_ref, const bool& unit_rad = false)
+{
+    Vector3f ecef     = ned2ecef(ned, lla_ref, unit_rad);
+    Vector3f ecef_ref = lla2ecef(lla_ref, unit_rad);
+    ecef += ecef_ref;
 
-                ecef, N = _input_check_Nx3(ecef)
+    Vector3f lla = ecef2lla(ecef, unit_rad);
 
-                ecef = ecef.T
+    return lla;
+}
 
-                C = zeros((3, 3))
 
-                if (latlon_unit == 'deg') :
-                    lat_ref = deg2rad(lat_ref)
-                    lon_ref = deg2rad(lon_ref)
-                    elif(latlon_unit == 'rad') :
-                    pass
-                else:
-    raise ValueError('Input unit unknown')
+/*
+Make a skew symmetric 2 - D array
+*/
+Matrix3f skew(const Vector3f& w)
+{
+    Matrix3f C(3, 3);
 
-        C[0, 0] = -sin(lat_ref) * cos(lon_ref)
-        C[0, 1] = -sin(lat_ref) * sin(lon_ref)
-        C[0, 2] = cos(lat_ref)
+    C << 0.0, -w(2),  w(1),
+        w(2),   0.0, -w(0),
+       -w(1),  w(0),   0.0;
 
-        C[1, 0] = -sin(lon_ref)
-        C[1, 1] = cos(lon_ref)
-        C[1, 2] = 0
-
-        C[2, 0] = -cos(lat_ref) * cos(lon_ref)
-        C[2, 1] = -cos(lat_ref) * sin(lon_ref)
-        C[2, 2] = -sin(lat_ref)
-
-        ned = dot(C, ecef)
-        ned = ned.T
-
-        if (N == 1) :
-            ned = ned.reshape(3)
-
-            return ned
-
-            def skew(w, output_type = 'ndarray') :
-            """
-            Make a skew symmetric 2 - D array
-            """
-            w, N = _input_check_Nx1(array(w))
-            if (N != 3) :
-                raise ValueError('Input dimension is not 3')
-
-                C = array([[0.0, -w[2], w[1]],
-                    [w[2], 0.0, -w[0]],
-                    [-w[1], w[0], 0.0]] )
-                if (output_type != 'ndarray') :
-                    C = matrix(C)
-
-                    return C
-
-                    def wrapToPi(e) :
-                    """
-                    Wraping angle to[-pi, pi] interval
-                    """
-                    dum, N = _input_check_Nx1(e)
-
-                    ew = mod(e + pi, 2 * pi) - pi
-
-                    return ew
-                    */
+    return C;
+}
