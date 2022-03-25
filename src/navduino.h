@@ -187,8 +187,8 @@ float earthGeoRad(const float& _lat, const bool& angle_unit = DEGREES)
 
 
 /*
-Calculate radius of curvature in the prime vertical(East - West) and
-meridian(North - South) at a given latitude.
+Calculate radius of curvature in the prime vertical (East - West) and
+meridian (North - South) at a given latitude.
 
 https://en.wikipedia.org/wiki/Earth_radius
 */
@@ -246,8 +246,8 @@ Vector3f earthRate(const float& _lat, const bool& angle_unit = DEGREES)
 
     Vector3f e;
     e << omega_E * cos(lat),
-        -omega_E * sin(lat),
-         0;
+         0,
+        -omega_E * sin(lat);
 
     return e;
 }
@@ -317,9 +317,18 @@ Vector3f navRate(const Vector3f& vned, const Vector3f& lla, const bool& angle_un
 
     Vector3f rho;
 
-    rho << VE / (Rew + alt),
-          -VN / (Rns + alt),
-          -VE * tan(lat) / (Rew + alt);
+    if (angle_unit == RADIANS)
+    {
+        rho << VE / (Rew + alt),
+              -VN / (Rns + alt),
+              -VE * tan(lat) / (Rew + alt);
+    }
+    else
+    {
+        rho << rad2deg(VE / (Rew + alt)),
+               rad2deg(-VN / (Rns + alt)),
+               rad2deg(-VE * tan(lat) / (Rew + alt));
+    }
 
     return rho;
 }
