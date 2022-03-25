@@ -8,42 +8,17 @@
 #include <Eigen/Geometry>
 
 
+
+
 using namespace Eigen;
 
 
-void printVec2f(const Vector2f& vec, const int& p = 5)
-{
-    Serial.println(vec(0), p);
-    Serial.println(vec(1), p);
-}
-
-void printVec3f(const Vector3f& vec, const int& p = 5)
-{
-    Serial.println(vec(0), p);
-    Serial.println(vec(1), p);
-    Serial.println(vec(2), p);
-}
-
-void printQuatf(const Quaternionf& quat, const int& p = 5)
-{
-    Serial.println(quat.x(), p);
-    Serial.println(quat.y(), p);
-    Serial.println(quat.z(), p);
-    Serial.println(quat.w(), p);
-}
-
-void printMat3f(const Matrix3f& mat, const int& p = 5)
-{
-    Serial.print(mat(0, 0), p); Serial.print(", "); Serial.print(mat(0, 1), p); Serial.print(", "); Serial.println(mat(0, 2), p);
-    Serial.print(mat(1, 0), p); Serial.print(", "); Serial.print(mat(1, 1), p); Serial.print(", "); Serial.println(mat(1, 2), p);
-    Serial.print(mat(2, 0), p); Serial.print(", "); Serial.print(mat(2, 1), p); Serial.print(", "); Serial.println(mat(2, 2), p);
-}
 
 
 /*
 This function converts Euler Angle into Direction Cosine Matrix(DCM).
 */
-Matrix3f angle2dcm(const Vector3f& angles, const bool& unit_rad = true, const int& rotation_sequence = 321, const bool& NED_to_body = true)
+Matrix3f angle2dcm(const Vector3f& angles, const bool& angle_unit = DEGREES, const bool& NED_to_body = true, const int& rotation_sequence = 321)
 {
     Matrix3f output(3, 3);
 
@@ -55,7 +30,7 @@ Matrix3f angle2dcm(const Vector3f& angles, const bool& unit_rad = true, const in
     float pitch;
     float yaw;
 
-    if (!unit_rad)
+    if (angle_unit == DEGREES)
     {
         roll  = deg2rad(angles(0));
         pitch = deg2rad(angles(1));
@@ -104,11 +79,13 @@ Matrix3f angle2dcm(const Vector3f& angles, const bool& unit_rad = true, const in
 }
 
 
+
+
 /*
 This function converts a Direction Cosine Matrix(DCM) into the three
 rotation angles.
 */
-Vector3f dcm2angle(const Matrix3f& dcm, const bool& unit_rad = true, const int& rotation_sequence = 321, const bool& NED_to_body = true)
+Vector3f dcm2angle(const Matrix3f& dcm, const bool& angle_unit = true, const bool& NED_to_body = true, const int& rotation_sequence = 321)
 {
     Vector3f angles;
 
@@ -128,7 +105,7 @@ Vector3f dcm2angle(const Matrix3f& dcm, const bool& unit_rad = true, const int& 
         }
     }
 
-    if (!unit_rad)
+    if (angle_unit == DEGREES)
     {
         angles(0) = rad2deg(angles(0));
         angles(1) = rad2deg(angles(1));
@@ -139,24 +116,30 @@ Vector3f dcm2angle(const Matrix3f& dcm, const bool& unit_rad = true, const int& 
 }
 
 
+
+
 /*
 Convert a sequence of rotation angles to an equivalent unit quaternion
 */
-Quaternionf angle2quat(const Vector3f& angles, const bool& unit_rad = true, const int& rotation_sequence = 321, const bool& NED_to_body = true)
+Quaternionf angle2quat(const Vector3f& angles, const bool& angle_unit = true, const bool& NED_to_body = true, const int& rotation_sequence = 321)
 {
-    Quaternionf quat(angle2dcm(angles, unit_rad, rotation_sequence, NED_to_body));
+    Quaternionf quat(angle2dcm(angles, angle_unit, NED_to_body, rotation_sequence));
     return quat;
 }
+
+
 
 
 /*
 Convert a unit quaternion to the equivalent sequence of angles of rotation
 about the rotation_sequence axes.
 */
-Vector3f quat2angle(const Quaternionf& quat, const bool& unit_rad = true, const int& rotation_sequence = 321, const bool& NED_to_body = true)
+Vector3f quat2angle(const Quaternionf& quat, const bool& angle_unit = true, const bool& NED_to_body = true, const int& rotation_sequence = 321)
 {
-    return dcm2angle(quat.toRotationMatrix(), unit_rad, rotation_sequence, NED_to_body);
+    return dcm2angle(quat.toRotationMatrix(), angle_unit, NED_to_body, rotation_sequence);
 }
+
+
 
 
 /*
@@ -166,6 +149,8 @@ Matrix3f quat2dcm(const Quaternionf& quat)
 {
     return quat.toRotationMatrix();
 }
+
+
 
 
 /*
@@ -178,21 +163,44 @@ Quaternionf dcm2quat(const Matrix3f& C)
 }
 
 
+
+
+/*
+Calculate geocentric radius at a given geodetic latitude.
+
+https://en.wikipedia.org/wiki/Earth_radius
+*/
+float earthGeoRad(const float& _lat, const bool& angle_unit = DEGREES)
+{
+    float lat = _lat;
+
+    if (angle_unit == DEGREES)
+        lat = deg2rad(lat);
+
+    float num = pow(a_sqrd * cos(lat), 2) + pow(b_sqrd * sin(lat), 2);
+    float den = pow(a * cos(lat), 2) + pow(b * sin(lat), 2);
+
+    return sqrt(num / den);
+}
+
+
+
+
 /*
 Calculate radius of curvature in the prime vertical(East - West) and
 meridian(North - South) at a given latitude.
 
 https://en.wikipedia.org/wiki/Earth_radius
 */
-Vector2f earthrad(const float& lat, const bool& unit_rad = false)
+Vector2f earthRad(const float& _lat, const bool& angle_unit = DEGREES)
 {
-    float _lat = lat;
+    float lat = _lat;
 
-    if (!unit_rad)
-        _lat = deg2rad(_lat);
+    if (angle_unit == DEGREES)
+        lat = deg2rad(lat);
 
-    float R_N = a / sqrt(1 - (ecc_sqrd * pow(sin(_lat), 2)));
-    float R_M = (a * (1 - ecc_sqrd)) / pow(1 - (ecc_sqrd * pow(sin(_lat), 2)), 1.5);
+    float R_N = a / sqrt(1 - (ecc_sqrd * pow(sin(lat), 2)));
+    float R_M = (a * (1 - ecc_sqrd)) / pow(1 - (ecc_sqrd * pow(sin(lat), 2)), 1.5);
 
     Vector2f out;
     out << R_N, // Earth's prime-vertical radius of curvature
@@ -202,29 +210,55 @@ Vector2f earthrad(const float& lat, const bool& unit_rad = false)
 }
 
 
+
+
+/*
+Calculate Azimuthal radius at a given geodetic latitude.
+
+https://en.wikipedia.org/wiki/Earth_radius
+*/
+float earthAzimRad(const float& lat, const float& _azimuth, const bool& angle_unit = DEGREES)
+{
+    float azimuth = _azimuth;
+
+    if (angle_unit == DEGREES)
+        azimuth = deg2rad(azimuth);
+
+    Vector2f eradvec = earthRad(lat, angle_unit);
+    float N = eradvec(0);
+    float M = eradvec(1);
+
+    return 1 / ((pow(cos(azimuth), 2) / M) + (pow(sin(azimuth), 2) / N));
+}
+
+
+
+
 /*
 Calculate the earth rotation rate resolved on NED axes given lat.
 */
-Vector3f earthrate(const float& lat, const bool& unit_rad = false)
+Vector3f earthRate(const float& _lat, const bool& angle_unit = DEGREES)
 {
-    float _lat = lat;
+    float lat = _lat;
 
-    if (!unit_rad)
-        _lat = deg2rad(_lat);
+    if (angle_unit == DEGREES)
+        lat = deg2rad(lat);
 
     Vector3f e;
-    e << omega_E * cos(_lat),
-        -omega_E * sin(_lat),
-        0;
+    e << omega_E * cos(lat),
+        -omega_E * sin(lat),
+         0;
 
     return e;
 }
 
 
+
+
 /*
 Calculate Latitude, Longitude, Altitude Rate given locally tangent velocity
 */
-Vector3f llarate(const Vector3f& vned, const Vector3f& lla, const bool& unit_rad = false)
+Vector3f llaRate(const Vector3f& vned, const Vector3f& lla, const bool& angle_unit = DEGREES)
 {
     float VN = vned(0);
     float VE = vned(1);
@@ -233,27 +267,32 @@ Vector3f llarate(const Vector3f& vned, const Vector3f& lla, const bool& unit_rad
     float lat = lla(0);
     float alt = lla(2);
 
-    Vector2f eradvec = earthrad(lat, unit_rad);
+    Vector2f eradvec = earthRad(lat, angle_unit);
     float Rew = eradvec(0);
     float Rns = eradvec(1);
 
+    if (angle_unit == DEGREES)
+        lat = deg2rad(lat);
+
     Vector3f lla_dot;
 
-    if (unit_rad)
+    if (angle_unit == RADIANS)
     {
         lla_dot << VN / (Rns + alt),
-            VE / (Rew + alt) / cos(deg2rad(lat)),
-            -VD;
+                   VE / (Rew + alt) / cos(lat),
+                  -VD;
     }
     else
     {
         lla_dot << rad2deg(VN / (Rns + alt)),
-            rad2deg(VE / (Rew + alt) / cos(deg2rad(lat))),
-            -VD;
+                   rad2deg(VE / (Rew + alt) / cos(lat)),
+                  -VD;
     }
 
     return lla_dot;
 }
+
+
 
 
 /*
@@ -261,7 +300,7 @@ Calculate navigation / transport rate given VN, VE, VD, lat, and alt.
 Navigation / transport rate is the angular velocity of the NED frame relative
 to the earth ECEF frame.
 */
-Vector3f navrate(const Vector3f& vned, const Vector3f& lla, const bool& unit_rad = false)
+Vector3f navRate(const Vector3f& vned, const Vector3f& lla, const bool& angle_unit = DEGREES)
 {
     float VN = vned(0);
     float VE = vned(1);
@@ -269,12 +308,12 @@ Vector3f navrate(const Vector3f& vned, const Vector3f& lla, const bool& unit_rad
     float lat = lla(0);
     float alt = lla(2);
 
-    if (!unit_rad)
-        lat = deg2rad(lat);
-
-    Vector2f eradvec = earthrad(lat, unit_rad);
+    Vector2f eradvec = earthRad(lat, angle_unit);
     float Rew = eradvec(0);
     float Rns = eradvec(1);
+
+    if (angle_unit == DEGREES)
+        lat = deg2rad(lat);
 
     Vector3f rho;
 
@@ -286,19 +325,21 @@ Vector3f navrate(const Vector3f& vned, const Vector3f& lla, const bool& unit_rad
 }
 
 
+
+
 /*
 Convert Latitude, Longitude, Altitude, to ECEF position
 */
-Vector3f lla2ecef(const Vector3f& lla, const bool& unit_rad = false)
+Vector3f lla2ecef(const Vector3f& lla, const bool& angle_unit = DEGREES)
 {
     float lat = lla(0);
     float lon = lla(1);
     float alt = lla(2);
 
-    Vector2f eradvec = earthrad(lat, unit_rad);
+    Vector2f eradvec = earthRad(lat, angle_unit);
     float Rew = eradvec(0);
 
-    if (!unit_rad)
+    if (angle_unit == DEGREES)
     {
         lat = deg2rad(lat);
         lon = deg2rad(lon);
@@ -314,13 +355,15 @@ Vector3f lla2ecef(const Vector3f& lla, const bool& unit_rad = false)
 }
 
 
+
+
 /*
 Calculate the Latitude, Longitudeand Altitude of a point located on earth
 given the ECEF Coordinates.
 
 https://en.wikipedia.org/wiki/Geographic_coordinate_conversion
 */
-Vector3f ecef2lla(const Vector3f& ecef, const bool& unit_rad = false)
+Vector3f ecef2lla(const Vector3f& ecef, const bool& angle_unit = DEGREES)
 {
     float x = ecef(0);
     float y = ecef(1);
@@ -352,20 +395,21 @@ Vector3f ecef2lla(const Vector3f& ecef, const bool& unit_rad = false)
     float h   = U * (1 - (b_sqrd / (a * V)));
     float lat = atan2(z + (ecc_prime_sqrd * z0), p);
 
-    if (!unit_rad)
+    if (angle_unit == DEGREES)
     {
         lat = rad2deg(lat);
         lon = rad2deg(lon);
     }
 
     Vector3f lla;
-
     lla << lat,
            lon,
            h;
 
     return lla;
 }
+
+
 
 
 /*
@@ -375,12 +419,12 @@ and alt_ref.
 
 https://en.wikipedia.org/wiki/Local_tangent_plane_coordinates
 */
-Vector3f ecef2ned(const Vector3f& ecef, const Vector3f& lla_ref, const bool& unit_rad = false)
+Vector3f ecef2ned(const Vector3f& ecef, const Vector3f& lla_ref, const bool& angle_unit = DEGREES)
 {
     float lat_ref = lla_ref(0);
     float lon_ref = lla_ref(1);
 
-    if (!unit_rad)
+    if (angle_unit == DEGREES)
     {
         lat_ref = deg2rad(lat_ref);
         lon_ref = deg2rad(lon_ref);
@@ -400,13 +444,15 @@ Vector3f ecef2ned(const Vector3f& ecef, const Vector3f& lla_ref, const bool& uni
     C(2, 1) = -cos(lat_ref) * sin(lon_ref);
     C(2, 2) = -sin(lat_ref);
 
-    Vector3f ecef_ref = lla2ecef(lla_ref, unit_rad);
+    Vector3f ecef_ref = lla2ecef(lla_ref, angle_unit);
     
     Vector3f ned;
     ned = C * (ecef - ecef_ref);
 
     return ned;
 }
+
+
 
 
 /*
@@ -416,25 +462,27 @@ and alt_ref.
 
 For example, this can be used to convert GPS data to a local NED frame.
 */
-Vector3f lla2ned(const Vector3f& lla, const Vector3f& lla_ref, const bool& unit_rad = false)
+Vector3f lla2ned(const Vector3f& lla, const Vector3f& lla_ref, const bool& angle_unit = DEGREES)
 {
-    Vector3f ecef = lla2ecef(lla, unit_rad);
-    Vector3f ned  = ecef2ned(ecef, lla_ref, unit_rad);
+    Vector3f ecef = lla2ecef(lla, angle_unit);
+    Vector3f ned  = ecef2ned(ecef, lla_ref, angle_unit);
 
     return ned;
 }
+
+
 
 
 /*
 Transform a vector resolved in NED(origin given by lat_ref, lon_ref, and alt_ref)
 coordinates to its ECEF representation.
 */
-Vector3f ned2ecef(const Vector3f& ned, const Vector3f& lla_ref, const bool& unit_rad = false)
+Vector3f ned2ecef(const Vector3f& ned, const Vector3f& lla_ref, const bool& angle_unit = DEGREES)
 {
     float lat_ref = lla_ref(0);
     float lon_ref = lla_ref(1);
 
-    if (!unit_rad)
+    if (angle_unit == DEGREES)
     {
         lat_ref = deg2rad(lat_ref);
         lon_ref = deg2rad(lon_ref);
@@ -461,20 +509,24 @@ Vector3f ned2ecef(const Vector3f& ned, const Vector3f& lla_ref, const bool& unit
 }
 
 
+
+
 /*
 Calculate the Latitude, Longitudeand Altitude of points given by NED coordinates
 where NED origin given by lat_ref, lon_ref, and alt_ref.
 */
-Vector3f ned2lla(const Vector3f& ned, const Vector3f& lla_ref, const bool& unit_rad = false)
+Vector3f ned2lla(const Vector3f& ned, const Vector3f& lla_ref, const bool& angle_unit = DEGREES)
 {
-    Vector3f ecef     = ned2ecef(ned, lla_ref, unit_rad);
-    Vector3f ecef_ref = lla2ecef(lla_ref, unit_rad);
+    Vector3f ecef     = ned2ecef(ned, lla_ref, angle_unit);
+    Vector3f ecef_ref = lla2ecef(lla_ref, angle_unit);
     ecef += ecef_ref;
 
-    Vector3f lla = ecef2lla(ecef, unit_rad);
+    Vector3f lla = ecef2lla(ecef, angle_unit);
 
     return lla;
 }
+
+
 
 
 /*
@@ -484,9 +536,229 @@ Matrix3f skew(const Vector3f& w)
 {
     Matrix3f C(3, 3);
 
-    C << 0.0, -w(2),  w(1),
-        w(2),   0.0, -w(0),
-       -w(1),  w(0),   0.0;
+    C <<  0.0, -w(2),  w(1),
+         w(2),   0.0, -w(0),
+        -w(1),   w(0),  0.0;
 
     return C;
+}
+
+
+
+
+float bearingLla(const Vector3f& lla_1, const Vector3f& lla_2, const bool& angle_unit = DEGREES)
+{
+    float lat_1 = lla_1(0);
+    float lon_1 = lla_1(1);
+
+    float lat_2 = lla_2(0);
+    float lon_2 = lla_2(1);
+
+    if (angle_unit == DEGREES)
+    {
+        lat_1 = deg2rad(lat_1);
+        lon_1 = deg2rad(lon_1);
+
+        lat_2 = deg2rad(lat_2);
+        lon_2 = deg2rad(lon_2);
+    }
+
+    float deltaLon = lon_2 - lon_1;
+
+    float x = cos(lat_2) * sin(deltaLon);
+    float y = cos(lat_1) * sin(lat_2) - sin(lat_1) * cos(lat_2) * cos(deltaLon);
+
+    return fmod(rad2deg(atan2(x, y)) + 360, 360);
+}
+
+
+
+
+float bearingNed(const Vector3f& ned_1, const Vector3f& ned_2)
+{
+    float n_1 = ned_1(0);
+    float e_1 = ned_1(1);
+
+    float n_2 = ned_2(0);
+    float e_2 = ned_2(1);
+
+    float x = e_2 - e_1;
+    float y = n_2 - n_1;
+
+    return fmod(rad2deg(atan2(x, y)) + 360, 360);
+}
+
+
+
+
+double distanceLla(const Vector3f& lla_1, const Vector3f& lla_2, const bool& angle_unit = DEGREES)
+{
+    float lat_1 = lla_1(0);
+    float lon_1 = lla_1(1);
+
+    float lat_2 = lla_2(0);
+    float lon_2 = lla_2(1);
+
+    if (angle_unit == DEGREES)
+    {
+        lat_1 = deg2rad(lat_1);
+        lon_1 = deg2rad(lon_1);
+
+        lat_2 = deg2rad(lat_2);
+        lon_2 = deg2rad(lon_2);
+    }
+
+    double deltaLat = lat_2 - lat_1;
+    double deltaLon = lon_2 - lon_1;
+
+    double _a = (sin(deltaLat / 2) * sin(deltaLat / 2)) + cos(lat_1) * cos(lat_2) * (sin(deltaLon / 2)) * (sin(deltaLon / 2));
+
+    float azimuth = bearingLla(lla_1, lla_2, angle_unit);
+    float radius  = earthAzimRad(lla_1(0), azimuth, angle_unit);
+
+    return 2 * radius * atan2(sqrt(_a), sqrt(1 - _a));
+}
+
+
+
+
+float distanceNed(const Vector3f& ned_1, const Vector3f& ned_2)
+{
+    Vector3f out = ned_2 - ned_1;
+    return out.norm();
+}
+
+
+
+
+float distanceNedHoriz(const Vector3f& ned_1, const Vector3f& ned_2)
+{
+    Vector2f out;
+
+    out << ned_2(0) - ned_1(0),
+           ned_2(1) - ned_1(1);
+
+    return out.norm();
+}
+
+
+
+
+float distanceNedVert(const Vector3f& ned_1, const Vector3f& ned_2)
+{
+    return ned_2(2) - ned_1(2);
+}
+
+
+
+
+float distanceEcef(const Vector3f& ecef_1, const Vector3f& ecef_2)
+{
+    Vector3f out = ecef_2 - ecef_1;
+    return out.norm();
+}
+
+
+
+
+float elevationLla(const Vector3f& lla_1, const Vector3f& lla_2, const bool& angle_unit = DEGREES)
+{
+    float lat_1 = lla_1(0);
+    float lon_1 = lla_1(1);
+    float alt_1 = lla_1(2);
+
+    float lat_2 = lla_2(0);
+    float lon_2 = lla_2(1);
+    float alt_2 = lla_2(2);
+
+    if (angle_unit == DEGREES)
+    {
+        lat_1 = deg2rad(lat_1);
+        lon_1 = deg2rad(lon_1);
+
+        lat_2 = deg2rad(lat_2);
+        lon_2 = deg2rad(lon_2);
+    }
+
+    float dist   = distanceLla(lla_1, lla_2, angle_unit);
+    float height = alt_2 - alt_1;
+
+    return rad2deg(atan2(height, dist));
+}
+
+
+
+
+float elevationNed(const Vector3f& ned_1, const Vector3f& ned_2)
+{
+    float d_1 = -ned_1(2);
+    float d_2 = -ned_2(2);
+
+    float dist   = distanceNed(ned_1, ned_2);
+    float height = d_2 - d_1;
+
+    return rad2deg(atan2(height, dist));
+}
+
+
+
+
+Vector3f LDAE2lla(const Vector3f& lla, const float& dist, const float& _azimuth, const float& _elevation = 0, const bool& angle_unit = DEGREES)
+{
+    float lat = lla(0);
+    float lon = lla(1);
+    float alt = lla(2);
+
+    float azimuth   = _azimuth;
+    float elevation = _elevation;
+
+    if (angle_unit == DEGREES)
+    {
+        lat = deg2rad(lat);
+        lon = deg2rad(lon);
+
+        azimuth   = deg2rad(azimuth);
+        elevation = deg2rad(elevation);
+    }
+
+    float radius   = earthAzimRad(lla(0), _azimuth, angle_unit);
+    float adj_dist = dist / radius;
+
+    float lat_2 = asin(sin(lat) * cos(adj_dist) + cos(lat) * sin(adj_dist) * cos(azimuth));
+    float lon_2 = lon + atan2(sin(azimuth) * sin(adj_dist) * cos(lat), cos(adj_dist) - sin(lat) * sin(lat_2));
+
+    Vector3f out;
+
+    out << rad2deg(lat_2),
+           rad2deg(lon_2),
+           alt + (dist * tan(elevation));
+
+    return out;
+}
+
+
+
+
+Vector3f NDAE2ned(const Vector3f& ned, const float& dist, const float& _azimuth, const float& _elevation = 0, const bool& angle_unit = DEGREES)
+{
+    float n = ned(0);
+    float e = ned(1);
+    float d = ned(2);
+
+    float azimuth   = _azimuth;
+    float elevation = _elevation;
+
+    if (angle_unit == DEGREES)
+    {
+        azimuth = deg2rad(azimuth);
+        elevation = deg2rad(elevation);
+    }
+
+    Vector3f out;
+
+    out << n + dist * cos(azimuth),
+           e + dist * sin(azimuth),
+           d + (dist * tan(elevation));
+
+    return out;
 }

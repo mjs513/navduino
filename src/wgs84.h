@@ -30,3 +30,4 @@ float ecc            = 8.1819190842622e-2; // First eccentricity
 float ecc_sqrd       = pow(ecc, 2);        // First eccentricity squared
 float ecc_prime      = 8.2094437949696e-2; // Second eccentricity
 float ecc_prime_sqrd = pow(ecc_prime, 2);  // Second eccentricity squared
+float r              = (2*a + b) / 3;      // Arithmetic mean radius [m]
