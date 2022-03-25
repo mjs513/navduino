@@ -299,7 +299,7 @@ Quaternionf dcm2quat(const Matrix3f& C)
   
   Returns:
   --------
-  * float radius - Earth's geocentric radius at a given latitude in meters
+  * float radius - Earth's geocentric radius in meters at a given latitude in meters
 */
 float earthGeoRad(const float& _lat, const bool& angle_unit)
 {
@@ -335,7 +335,7 @@ float earthGeoRad(const float& _lat, const bool& angle_unit)
 
   Returns:
   --------
-  * Vector2f radii - Earth's radii of curvature { N, M } at a given latitude
+  * Vector2f radii - Earth's radii of curvature { N, M } in meters at a given latitude
 */
 Vector2f earthRad(const float& _lat, const bool& angle_unit)
 {
@@ -375,7 +375,7 @@ Vector2f earthRad(const float& _lat, const bool& angle_unit)
 
   Returns:
   --------
-  * float radius - Earth's azimuthal radius at a given latitude and azimuth
+  * float radius - Earth's azimuthal radius in meters at a given latitude and azimuth
 */
 float earthAzimRad(const float& lat, const float& _azimuth, const bool& angle_unit)
 {
@@ -400,6 +400,8 @@ float earthAzimRad(const float& lat, const float& _azimuth, const bool& angle_un
   Calculate Earth's angular velocity in m/s resolved in the NED frame at a given
   latitude.
 
+  https://en.wikipedia.org/wiki/Geographic_coordinate_system
+
   Arguments:
   ----------
   * const float& _lat      - Angle of latitude
@@ -407,8 +409,7 @@ float earthAzimRad(const float& lat, const float& _azimuth, const bool& angle_un
 
   Returns:
   --------
-  * Vector3f e - Earth's angular velocity in rad/s resolved in the NED frame
-                 at a given latitude
+  * Vector3f e - Earth's angular velocity resolved in the NED frame at a given latitude
 */
 Vector3f earthRate(const float& _lat, const bool& angle_unit)
 {
@@ -429,7 +430,25 @@ Vector3f earthRate(const float& _lat, const bool& angle_unit)
 
 
 /*
-Calculate Latitude, Longitude, Altitude Rate given locally tangent velocity
+  Description:
+  ------------
+  Calculate the latitude, longitude, and altitude (LLA) angular rates
+  given the locally tangent velocity in the NED frame and latitude.
+
+  https://en.wikipedia.org/wiki/Geographic_coordinate_system
+
+  Arguments:
+  ----------
+  * const Vector3f& vned   - Velocity vector in m/s in the NED frame
+  * const Vector3f& lla    - LLA coordinate (altitude in meters)
+  * const bool& angle_unit - Unit of the latitude and longitude angles (rad
+                             or degrees) (this also affects the output units
+                             (rad/s or degrees/s)
+
+  Returns:
+  --------
+  * Vector3f lla_dot - LLA angular rates given the locally tangent velocity
+                       in the NED frame and latitude
 */
 Vector3f llaRate(const Vector3f& vned, const Vector3f& lla, const bool& angle_unit)
 {
@@ -469,9 +488,26 @@ Vector3f llaRate(const Vector3f& vned, const Vector3f& lla, const bool& angle_un
 
 
 /*
-Calculate navigation / transport rate given VN, VE, VD, lat, and alt.
-Navigation / transport rate is the angular velocity of the NED frame relative
-to the earth ECEF frame.
+  Description:
+  ------------
+  Calculate the navigation/transport angular rates given the locally tangent
+  velocity in the NED frame and latitude. The navigation/transport rate is
+  the angular velocity of the NED frame relative to the ECEF frame.
+
+  https://en.wikipedia.org/wiki/Geographic_coordinate_system
+
+  Arguments:
+  ----------
+  * const Vector3f& vned   - Velocity vector in m/s in the NED frame
+  * const Vector3f& lla    - LLA coordinate (altitude in meters)
+  * const bool& angle_unit - Unit of the latitude and longitude angles (rad
+                             or degrees) (this also affects the output units
+                             (rad/s or degrees/s)
+
+  Returns:
+  --------
+  * Vector3f rho - Navigation/transport angular rates in the ECEF frame given
+                   the locally tangent velocity in the NED frame and latitude
 */
 Vector3f navRate(const Vector3f& vned, const Vector3f& lla, const bool& angle_unit)
 {
@@ -510,7 +546,22 @@ Vector3f navRate(const Vector3f& vned, const Vector3f& lla, const bool& angle_un
 
 
 /*
-Convert Latitude, Longitude, Altitude, to ECEF position
+  Description:
+  ------------
+  Convert a LLA coordinate to an ECEF coordinate.
+
+  https://en.wikipedia.org/wiki/Geographic_coordinate_system
+  https://en.wikipedia.org/wiki/Earth-centered,_Earth-fixed_coordinate_system
+
+  Arguments:
+  ----------
+  * const Vector3f& lla    - LLA coordinate (altitude in meters)
+  * const bool& angle_unit - Unit of the latitude and longitude angles (rad
+                             or degrees)
+
+  Returns:
+  --------
+  * Vector3f ecef - ECEF coordinate in meters
 */
 Vector3f lla2ecef(const Vector3f& lla, const bool& angle_unit)
 {
@@ -540,10 +591,22 @@ Vector3f lla2ecef(const Vector3f& lla, const bool& angle_unit)
 
 
 /*
-Calculate the Latitude, Longitudeand Altitude of a point located on earth
-given the ECEF Coordinates.
+  Description:
+  ------------
+  Convert an ECEF coordinate to a LLA coordinate.
 
-https://en.wikipedia.org/wiki/Geographic_coordinate_conversion
+  https://en.wikipedia.org/wiki/Geographic_coordinate_system
+  https://en.wikipedia.org/wiki/Earth-centered,_Earth-fixed_coordinate_system
+
+  Arguments:
+  ----------
+  * const Vector3f& ecef    - ECEF coordinate in meters
+  * const bool& angle_unit - Unit of the latitude and longitude angles (rad
+                             or degrees)
+
+  Returns:
+  --------
+  * Vector3f& lla - LLA coordinate (altitude in meters)
 */
 Vector3f ecef2lla(const Vector3f& ecef, const bool& angle_unit)
 {
@@ -595,11 +658,23 @@ Vector3f ecef2lla(const Vector3f& ecef, const bool& angle_unit)
 
 
 /*
-Transform a vector resolved in ECEF coordinate to its resolution in the NED
-coordinate.The center of the NED coordiante is given by lat_ref, lon_ref,
-and alt_ref.
+  Description:
+  ------------
+  Convert an ECEF coordinate to a NED coordinate.
 
-https://en.wikipedia.org/wiki/Local_tangent_plane_coordinates
+  https://en.wikipedia.org/wiki/Geographic_coordinate_system
+  https://en.wikipedia.org/wiki/Earth-centered,_Earth-fixed_coordinate_system
+
+  Arguments:
+  ----------
+  * const Vector3f& ecef     - ECEF coordinate in meters
+  * const Vector3f& lla_ref - LLA coordinate of the NED frame origin (altitude in meters)
+  * const bool& angle_unit  - Unit of the latitude and longitude angles (rad
+                              or degrees)
+
+  Returns:
+  --------
+  * Vector3f& ned - NED coordinate in meters
 */
 Vector3f ecef2ned(const Vector3f& ecef, const Vector3f& lla_ref, const bool& angle_unit)
 {
@@ -638,11 +713,22 @@ Vector3f ecef2ned(const Vector3f& ecef, const Vector3f& lla_ref, const bool& ang
 
 
 /*
-Convert Latitude, Longitude, Altitude to its resolution in the NED
-coordinate.The center of the NED coordiante is given by lat_ref, lon_ref,
-and alt_ref.
+  Description:
+  ------------
+  Convert a LLA coordinate to a NED coordinate.
 
-For example, this can be used to convert GPS data to a local NED frame.
+  https://en.wikipedia.org/wiki/Geographic_coordinate_system
+
+  Arguments:
+  ----------
+  * const Vector3f& lla      - LLA coordinate (altitude in meters)
+  * const Vector3f& lla_ref - LLA coordinate of the NED frame origin (altitude in meters)
+  * const bool& angle_unit  - Unit of the latitude and longitude angles (rad
+                              or degrees)
+
+  Returns:
+  --------
+  * Vector3f& ned - NED coordinate in meters
 */
 Vector3f lla2ned(const Vector3f& lla, const Vector3f& lla_ref, const bool& angle_unit)
 {
@@ -656,8 +742,23 @@ Vector3f lla2ned(const Vector3f& lla, const Vector3f& lla_ref, const bool& angle
 
 
 /*
-Transform a vector resolved in NED(origin given by lat_ref, lon_ref, and alt_ref)
-coordinates to its ECEF representation.
+  Description:
+  ------------
+  Convert a NED coordinate to an ECEF coordinate.
+
+  https://en.wikipedia.org/wiki/Geographic_coordinate_system
+  https://en.wikipedia.org/wiki/Earth-centered,_Earth-fixed_coordinate_system
+
+  Arguments:
+  ----------
+  * const Vector3f& ned      - NED coordinate in meters
+  * const Vector3f& lla_ref - LLA coordinate of the NED frame origin (altitude in meters)
+  * const bool& angle_unit  - Unit of the latitude and longitude angles (rad
+                              or degrees)
+
+  Returns:
+  --------
+  * Vector3f ecef - ECEF coordinate in meters
 */
 Vector3f ned2ecef(const Vector3f& ned, const Vector3f& lla_ref, const bool& angle_unit)
 {
@@ -694,8 +795,22 @@ Vector3f ned2ecef(const Vector3f& ned, const Vector3f& lla_ref, const bool& angl
 
 
 /*
-Calculate the Latitude, Longitudeand Altitude of points given by NED coordinates
-where NED origin given by lat_ref, lon_ref, and alt_ref.
+  Description:
+  ------------
+  Convert a NED coordinate to a LLA coordinate.
+
+  https://en.wikipedia.org/wiki/Geographic_coordinate_system
+
+  Arguments:
+  ----------
+  * const Vector3f& ned     - NED coordinate in meters
+  * const Vector3f& lla_ref - LLA coordinate of the NED frame origin (altitude in meters)
+  * const bool& angle_unit  - Unit of the latitude and longitude angles (rad
+                              or degrees)
+
+  Returns:
+  --------
+  * Vector3f& lla - LLA coordinate (altitude in meters)
 */
 Vector3f ned2lla(const Vector3f& ned, const Vector3f& lla_ref, const bool& angle_unit)
 {
@@ -712,7 +827,20 @@ Vector3f ned2lla(const Vector3f& ned, const Vector3f& lla_ref, const bool& angle
 
 
 /*
-Make a skew symmetric 2 - D array
+  Description:
+  ------------
+  Make a skew symmetric matrix from a 3 element vector. Skew
+  symmetric matrices are often used to easily take cross products.
+
+  https://en.wikipedia.org/wiki/Skew-symmetric_matrix
+
+  Arguments:
+  ----------
+  * const Vector3f& w - 3 element vector
+
+  Returns:
+  --------
+  * Matrix3f C - Skew symmetric matrix of vector w
 */
 Matrix3f skew(const Vector3f& w)
 {
@@ -728,6 +856,25 @@ Matrix3f skew(const Vector3f& w)
 
 
 
+/*
+  Description:
+  ------------
+  Calculate the bearing between two LLA coordinates.
+
+  http://www.movable-type.co.uk/scripts/latlong.html
+  https://en.wikipedia.org/wiki/Geographic_coordinate_system
+
+  Arguments:
+  ----------
+  * const Vector3f& lla_1  - First LLA coordinate (altitude in meters)
+  * const Vector3f& lla_2  - Second LLA coordinate (altitude in meters)
+  * const bool& angle_unit - Unit of the latitude, longitude, and bearing
+                             angles (rad or degrees)
+
+  Returns:
+  --------
+  * float bearing - The bearing between the two given LLA coordinates
+*/
 float bearingLla(const Vector3f& lla_1, const Vector3f& lla_2, const bool& angle_unit)
 {
     float lat_1 = lla_1(0);
@@ -756,6 +903,24 @@ float bearingLla(const Vector3f& lla_1, const Vector3f& lla_2, const bool& angle
 
 
 
+/*
+  Description:
+  ------------
+  Calculate the bearing between two NED coordinates.
+
+  https://en.wikipedia.org/wiki/Geographic_coordinate_system
+
+  Arguments:
+  ----------
+  * const Vector3f& ned_1  - First NED coordinate in meters
+  * const Vector3f& ned_2  - Second NED coordinate in meters
+  * const bool& angle_unit - Unit of the latitude, longitude, and bearing
+                             angles (rad or degrees)
+
+  Returns:
+  --------
+  * float bearing - The bearing between the two given LLA coordinates
+*/
 float bearingNed(const Vector3f& ned_1, const Vector3f& ned_2)
 {
     float n_1 = ned_1(0);
@@ -773,6 +938,25 @@ float bearingNed(const Vector3f& ned_1, const Vector3f& ned_2)
 
 
 
+/*
+  Description:
+  ------------
+  Calculate the distance between two LLA coordinates.
+
+  http://www.movable-type.co.uk/scripts/latlong.html
+  https://en.wikipedia.org/wiki/Geographic_coordinate_system
+
+  Arguments:
+  ----------
+  * const Vector3f& lla_1  - First LLA coordinate (altitude in meters)
+  * const Vector3f& lla_2  - Second LLA coordinate (altitude in meters)
+  * const bool& angle_unit - Unit of the latitude and longitude angles (rad
+                             or degrees)
+
+  Returns:
+  --------
+  * float dist - The distance between the two given LLA coordinates in meters
+*/
 double distanceLla(const Vector3f& lla_1, const Vector3f& lla_2, const bool& angle_unit)
 {
     float lat_1 = lla_1(0);
@@ -804,6 +988,22 @@ double distanceLla(const Vector3f& lla_1, const Vector3f& lla_2, const bool& ang
 
 
 
+/*
+  Description:
+  ------------
+  Calculate the total distance between two NED coordinates.
+
+  https://en.wikipedia.org/wiki/Geographic_coordinate_system
+
+  Arguments:
+  ----------
+  * const Vector3f& ned_1 - First NED coordinate in meters
+  * const Vector3f& ned_2 - Second NED coordinate in meters
+
+  Returns:
+  --------
+  * float dist - The total distance between the two given NED coordinates
+*/
 float distanceNed(const Vector3f& ned_1, const Vector3f& ned_2)
 {
     Vector3f out = ned_2 - ned_1;
@@ -813,6 +1013,22 @@ float distanceNed(const Vector3f& ned_1, const Vector3f& ned_2)
 
 
 
+/*
+  Description:
+  ------------
+  Calculate the horizontal distance between two NED coordinates.
+
+  https://en.wikipedia.org/wiki/Geographic_coordinate_system
+
+  Arguments:
+  ----------
+  * const Vector3f& ned_1 - First NED coordinate in meters
+  * const Vector3f& ned_2 - Second NED coordinate in meters
+
+  Returns:
+  --------
+  * float dist - The horizontal distance between the two given NED coordinates
+*/
 float distanceNedHoriz(const Vector3f& ned_1, const Vector3f& ned_2)
 {
     Vector2f out;
@@ -826,6 +1042,22 @@ float distanceNedHoriz(const Vector3f& ned_1, const Vector3f& ned_2)
 
 
 
+/*
+  Description:
+  ------------
+  Calculate the vertical distance between two NED coordinates.
+
+  https://en.wikipedia.org/wiki/Geographic_coordinate_system
+
+  Arguments:
+  ----------
+  * const Vector3f& ned_1 - First NED coordinate in meters
+  * const Vector3f& ned_2 - Second NED coordinate in meters
+
+  Returns:
+  --------
+  * float dist - The vertical distance between the two given NED coordinates
+*/
 float distanceNedVert(const Vector3f& ned_1, const Vector3f& ned_2)
 {
     return ned_2(2) - ned_1(2);
@@ -834,6 +1066,23 @@ float distanceNedVert(const Vector3f& ned_1, const Vector3f& ned_2)
 
 
 
+/*
+  Description:
+  ------------
+  Calculate the total distance between two ECEF coordinates.
+
+  https://en.wikipedia.org/wiki/Geographic_coordinate_system
+  https://en.wikipedia.org/wiki/Earth-centered,_Earth-fixed_coordinate_system
+
+  Arguments:
+  ----------
+  * const Vector3f& ecef_1 - First ECEF coordinate in meters
+  * const Vector3f& ecef_2 - Second ECEF coordinate in meters
+
+  Returns:
+  --------
+  * float dist - The total distance between the two given ECEF coordinates
+*/
 float distanceEcef(const Vector3f& ecef_1, const Vector3f& ecef_2)
 {
     Vector3f out = ecef_2 - ecef_1;
@@ -843,6 +1092,25 @@ float distanceEcef(const Vector3f& ecef_1, const Vector3f& ecef_2)
 
 
 
+/*
+  Description:
+  ------------
+  Calculate the elevation angle between two LLA coordinates.
+
+  http://www.movable-type.co.uk/scripts/latlong.html
+  https://en.wikipedia.org/wiki/Geographic_coordinate_system
+
+  Arguments:
+  ----------
+  * const Vector3f& lla_1  - First LLA coordinate (altitude in meters)
+  * const Vector3f& lla_2  - Second LLA coordinate (altitude in meters)
+  * const bool& angle_unit - Unit of the latitude, longitude, and elevation
+                             angles (rad or degrees)
+
+  Returns:
+  --------
+  * float elevation - The elevation angle between the two given LLA coordinates
+*/
 float elevationLla(const Vector3f& lla_1, const Vector3f& lla_2, const bool& angle_unit)
 {
     float lat_1 = lla_1(0);
@@ -871,6 +1139,24 @@ float elevationLla(const Vector3f& lla_1, const Vector3f& lla_2, const bool& ang
 
 
 
+/*
+  Description:
+  ------------
+  Calculate the elevation angle between two NED coordinates.
+
+  https://en.wikipedia.org/wiki/Geographic_coordinate_system
+
+  Arguments:
+  ----------
+  * const Vector3f& ned_1  - First NED coordinate (altitude in meters)
+  * const Vector3f& ned_2  - Second NED coordinate (altitude in meters)
+  * const bool& angle_unit - Unit of the latitude, longitude, and elevation
+                             angles (rad or degrees)
+
+  Returns:
+  --------
+  * float elevation - The elevation angle between the two given NED coordinates
+*/
 float elevationNed(const Vector3f& ned_1, const Vector3f& ned_2)
 {
     float d_1 = -ned_1(2);
@@ -885,6 +1171,29 @@ float elevationNed(const Vector3f& ned_1, const Vector3f& ned_2)
 
 
 
+/*
+  Description:
+  ------------
+  Calculate a LLA coordinate based on a given LLA coordinate, distance,
+  azimuth, and elevation angle.
+
+  http://www.movable-type.co.uk/scripts/latlong.html
+  https://en.wikipedia.org/wiki/Geographic_coordinate_system
+
+  Arguments:
+  ----------
+  * const Vector3f& lla     - LLA coordinate (altitude in meters)
+  * const float& dist       - "As the crow flies" distance between the two
+                              LLA coordinates in meters
+  * const float& _azimuth   - Azimuth angle between the two LLA coordinates
+  * const float& _elevation - Elevation angle between the two LLA coordinates
+  * const bool& angle_unit  - Unit of the latitude, longitude, azimuth, and
+                              elevation angles (rad or degrees)
+
+  Returns:
+  --------
+  * Vector3f& out - New LLA coordinate (altitude in meters)
+*/
 Vector3f LDAE2lla(const Vector3f& lla, const float& dist, const float& _azimuth, const float& _elevation, const bool& angle_unit)
 {
     float lat = lla(0);
@@ -921,6 +1230,28 @@ Vector3f LDAE2lla(const Vector3f& lla, const float& dist, const float& _azimuth,
 
 
 
+/*
+  Description:
+  ------------
+  Calculate a NED coordinate based on a given NED coordinate, distance,
+  azimuth, and elevation angle.
+
+  https://en.wikipedia.org/wiki/Geographic_coordinate_system
+
+  Arguments:
+  ----------
+  * const Vector3f& ned     - NED coordinate in meters
+  * const float& dist       - Horizontal distance between the two
+                              NED coordinates in meters
+  * const float& _azimuth   - Azimuth angle between the two NED coordinates
+  * const float& _elevation - Elevation angle between the two NED coordinates
+  * const bool& angle_unit  - Unit of the azimuth and elevation angles (rad
+                              or degrees)
+
+  Returns:
+  --------
+  * Vector3f& out - New NED coordinate in meters
+*/
 Vector3f NDAE2ned(const Vector3f& ned, const float& dist, const float& _azimuth, const float& _elevation, const bool& angle_unit)
 {
     float n = ned(0);
