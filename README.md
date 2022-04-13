@@ -11,6 +11,7 @@ Arduino library for basic aerial navigation functions used for
   *  [Latitude-Longitude-Altitude (LLA)](https://en.wikipedia.org/wiki/Geographic_coordinate_system)
   *  [North-East-Down (NED)](https://en.wikipedia.org/wiki/Local_tangent_plane_coordinates)
   *  [Earth Centered Earth Fixed (ECEF)](https://en.wikipedia.org/wiki/Earth-centered,_Earth-fixed_coordinate_system)
+  *  [Affine/Pose transforms (conversions between two non-colocated cartesian coordinate frames)](https://en.wikipedia.org/wiki/Affine_transformation)
 * [Distance and bearing calculations between 2 coordinates](http://www.movable-type.co.uk/scripts/latlong.html)
 * [Calculating a new coordinate based on a reference coordinate (i.e. given a LLA coordinate, great circle distance, azimuth, and elevation angle, find the resulting LLA coordinate)](http://www.movable-type.co.uk/scripts/latlong.html)
 
@@ -24,18 +25,15 @@ Vector3f quat2angle(const Quaternionf& quat, const bool& angle_unit = DEGREES, c
 Matrix3f quat2dcm(const Quaternionf& quat);
 Quaternionf dcm2quat(const Matrix3f& C);
 
-
 // Earth radius calculations
 float earthGeoRad(const float& _lat, const bool& angle_unit = DEGREES);
 Vector2f earthRad(const float& _lat, const bool& angle_unit = DEGREES);
 float earthAzimRad(const float& lat, const float& _azimuth, const bool& angle_unit = DEGREES);
 
-
 // Frame angular rate calculations
 Vector3f earthRate(const float& _lat, const bool& angle_unit = DEGREES);
 Vector3f llaRate(const Vector3f& vned, const Vector3f& lla, const bool& angle_unit = DEGREES);
 Vector3f navRate(const Vector3f& vned, const Vector3f& lla, const bool& angle_unit = DEGREES);
-
 
 // Frame conversions
 Vector3f lla2ecef(const Vector3f& lla, const bool& angle_unit = DEGREES);
@@ -45,15 +43,17 @@ Vector3f lla2ned(const Vector3f& lla, const Vector3f& lla_ref, const bool& angle
 Vector3f ned2ecef(const Vector3f& ned, const Vector3f& lla_ref, const bool& angle_unit = DEGREES);
 Vector3f ned2lla(const Vector3f& ned, const Vector3f& lla_ref, const bool& angle_unit = DEGREES);
 
+// Pose functions
+PoseMatrix poseMat(const Matrix3f& dcm, const Vector3f& t);
+Vector3f transformPt(const Matrix3f& dcm, const Vector3f& t, const Vector3f& x);
+Vector3f transformPt(const PoseMatrix& poseMatrix, const Vector3f& x);
 
 // Linear algebra
 Matrix3f skew(const Vector3f& w);
 
-
 // Bearing calculations
 float bearingLla(const Vector3f& lla_1, const Vector3f& lla_2, const bool& angle_unit = DEGREES);
 float bearingNed(const Vector3f& ned_1, const Vector3f& ned_2);
-
 
 // Distance calculations
 double distanceLla(const Vector3f& lla_1, const Vector3f& lla_2, const bool& angle_unit = DEGREES);
@@ -62,16 +62,13 @@ float distanceNedHoriz(const Vector3f& ned_1, const Vector3f& ned_2);
 float distanceNedVert(const Vector3f& ned_1, const Vector3f& ned_2);
 float distanceEcef(const Vector3f& ecef_1, const Vector3f& ecef_2);
 
-
 // Elevation calculations
 float elevationLla(const Vector3f& lla_1, const Vector3f& lla_2, const bool& angle_unit = DEGREES);
 float elevationNed(const Vector3f& ned_1, const Vector3f& ned_2);
 
-
 // Relative coordinate calculations
 Vector3f LDAE2lla(const Vector3f& lla, const float& dist, const float& _azimuth, const float& _elevation = 0, const bool& angle_unit = DEGREES);
 Vector3f NDAE2ned(const Vector3f& ned, const float& dist, const float& _azimuth, const float& _elevation = 0, const bool& angle_unit = DEGREES);
-
 
 // Eigen object printing functions
 void printVec2f(const Vector2f& vec, const int& p = 5, Stream& stream = Serial);
@@ -80,11 +77,9 @@ void printVec4f(const Vector4f& vec, const int& p = 5, Stream& stream = Serial);
 void printQuatf(const Quaternionf& quat, const int& p = 5, Stream& stream = Serial);
 void printMat3f(const Matrix3f& mat, const int& p = 5, Stream& stream = Serial);
 
-
 // Constrain functions
 float float_constrain(const float& input, const float& min, const float& max);
 double double_constrain(const double& input, const double& min, const double& max);
-
 
 // Map functions
 float float_map(const float& x, const float& in_min, const float& in_max, const float& out_min, const float& out_max);
