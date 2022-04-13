@@ -85,6 +85,12 @@ void setup()
   else
     Serial.println("ecef2lla() failed <-----");
 
+
+  if (test_ecef2ned_dcm())
+    Serial.println("ecef2ned_dcm() passed");
+  else
+    Serial.println("ecef2ned_dcm() failed <-----");
+
   
   if (test_poseMat())
     Serial.println("poseMat() passed");
@@ -426,6 +432,26 @@ bool test_ecef2lla()
   Serial.println();
   
   return lla.isApprox(truth);
+}
+
+
+
+
+bool test_ecef2ned_dcm()
+{
+  Vector3f lla;
+  lla << 35, // lat - degrees
+        -10, // lon - degrees
+        250; // alt - m
+
+  Matrix3f dcm = ecef2ned_dcm(lla, DEGREES);
+
+  Matrix3f truth;
+  truth << -0.56486252, 0.0996005,   0.81915204,
+            0.17364818, 0.98480775,  0,
+           -0.80670728, 0.14224426, -0.57357644;
+  
+  return dcm.isApprox(truth);
 }
 
 

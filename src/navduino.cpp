@@ -659,6 +659,58 @@ Vector3f ecef2lla(const Vector3f& ecef, const bool& angle_unit)
 /*
   Description:
   ------------
+  Find the direction cosine matrix that describes the rotation from the ECEF
+  coordinate frame to the NED frame given a lat/lon/alt location.
+
+  https://www.mathworks.com/help/aeroblks/directioncosinematrixeceftoned.html
+  https://en.wikipedia.org/wiki/Rotation_matrix
+  https://en.wikipedia.org/wiki/Geographic_coordinate_system
+  https://en.wikipedia.org/wiki/Earth-centered,_Earth-fixed_coordinate_system
+
+  Arguments:
+  ----------
+  * const Vector3f& lla    - LLA coordinate (altitude in meters)
+  * const bool& angle_unit - Unit of the latitude and longitude angles (rad
+                             or degrees)
+
+  Returns:
+  --------
+  * Matrix3f C - 
+*/
+Matrix3f ecef2ned_dcm(const Vector3f& lla, const bool& angle_unit)
+{
+    float lat = lla(0);
+    float lon = lla(1);
+
+    if (angle_unit == DEGREES)
+    {
+        lat = deg2rad(lat);
+        lon = deg2rad(lon);
+    }
+
+    Matrix3f C;
+
+    C(0, 0) = -sin(lat) * cos(lon);
+    C(0, 1) = -sin(lat) * sin(lon);
+    C(0, 2) = cos(lat);
+
+    C(1, 0) = -sin(lon);
+    C(1, 1) = cos(lon);
+    C(1, 2) = 0;
+
+    C(2, 0) = -cos(lat) * cos(lon);
+    C(2, 1) = -cos(lat) * sin(lon);
+    C(2, 2) = -sin(lat);
+
+    return C;
+}
+
+
+
+
+/*
+  Description:
+  ------------
   Convert an ECEF coordinate to a NED coordinate.
 
   https://en.wikipedia.org/wiki/Geographic_coordinate_system
@@ -677,35 +729,10 @@ Vector3f ecef2lla(const Vector3f& ecef, const bool& angle_unit)
 */
 Vector3f ecef2ned(const Vector3f& ecef, const Vector3f& lla_ref, const bool& angle_unit)
 {
-    float lat_ref = lla_ref(0);
-    float lon_ref = lla_ref(1);
-
-    if (angle_unit == DEGREES)
-    {
-        lat_ref = deg2rad(lat_ref);
-        lon_ref = deg2rad(lon_ref);
-    }
-
-    Matrix3f C(3, 3);
-
-    C(0, 0) = -sin(lat_ref) * cos(lon_ref);
-    C(0, 1) = -sin(lat_ref) * sin(lon_ref);
-    C(0, 2) =  cos(lat_ref);
-
-    C(1, 0) = -sin(lon_ref);
-    C(1, 1) =  cos(lon_ref);
-    C(1, 2) =  0;
-
-    C(2, 0) = -cos(lat_ref) * cos(lon_ref);
-    C(2, 1) = -cos(lat_ref) * sin(lon_ref);
-    C(2, 2) = -sin(lat_ref);
-
     Vector3f ecef_ref = lla2ecef(lla_ref, angle_unit);
+    Matrix3f C        = ecef2ned_dcm(lla_ref, angle_unit);
 
-    Vector3f ned;
-    ned = C * (ecef - ecef_ref);
-
-    return ned;
+    return C * (ecef - ecef_ref);
 }
 
 

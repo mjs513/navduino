@@ -54,6 +54,7 @@ Vector3f navRate(const Vector3f& vned, const Vector3f& lla, const bool& angle_un
 // Frame conversions
 Vector3f lla2ecef(const Vector3f& lla, const bool& angle_unit = DEGREES);
 Vector3f ecef2lla(const Vector3f& ecef, const bool& angle_unit = DEGREES);
+Matrix3f ecef2ned_dcm(const Vector3f& lla, const bool& angle_unit = DEGREES);
 Vector3f ecef2ned(const Vector3f& ecef, const Vector3f& lla_ref, const bool& angle_unit = DEGREES);
 Vector3f lla2ned(const Vector3f& lla, const Vector3f& lla_ref, const bool& angle_unit = DEGREES);
 Vector3f ned2ecef(const Vector3f& ned, const Vector3f& lla_ref, const bool& angle_unit = DEGREES);
