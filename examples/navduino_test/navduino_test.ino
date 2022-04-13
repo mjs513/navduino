@@ -84,6 +84,42 @@ void setup()
     Serial.println("ecef2lla() passed");
   else
     Serial.println("ecef2lla() failed <-----");
+
+  
+  if (test_poseMat())
+    Serial.println("poseMat() passed");
+  else
+    Serial.println("poseMat() failed <-----");
+
+  
+  if (test_transformPt_dcm_t())
+    Serial.println("transformPt(dcm, t) passed");
+  else
+    Serial.println("transformPt(dcm, t) failed <-----");
+
+  
+  if (test_transformPt_pose())
+    Serial.println("transformPt(pose) passed");
+  else
+    Serial.println("transformPt(pose) failed <-----");
+
+  
+  if (test_bearingLla())
+    Serial.println("bearingLla() passed");
+  else
+    Serial.println("bearingLla() failed <-----");
+
+  
+  if (test_distanceLla())
+    Serial.println("distanceLla() passed");
+  else
+    Serial.println("distanceLla() failed <-----");
+
+  
+  if (test_LDAE2lla())
+    Serial.println("LDAE2lla() passed");
+  else
+    Serial.println("LDAE2lla() failed <-----");
 }
 
 
@@ -390,4 +426,159 @@ bool test_ecef2lla()
   Serial.println();
   
   return lla.isApprox(truth);
+}
+
+
+
+
+bool test_poseMat()
+{
+  Matrix3f dcm(3, 3);
+  dcm << 0.4924039, 0.6737663, -0.5509785,
+        -0.8528686, 0.2472160, -0.4598908,
+        -0.1736482, 0.6963642,  0.6963642;
+
+  Vector3f t;
+  t << 1,
+      10,
+      -5;
+
+  PoseMatrix pose = poseMat(dcm, t);
+
+  PoseMatrix truth;
+  truth << 0.4924039, 0.6737663, -0.5509785,  1,
+          -0.8528686, 0.2472160, -0.4598908, 10,
+          -0.1736482, 0.6963642,  0.6963642, -5;
+
+  return pose.isApprox(truth);
+}
+
+
+
+
+bool test_transformPt_dcm_t()
+{
+  Matrix3f dcm(3, 3);
+  dcm << 0.4924039, 0.6737663, -0.5509785,
+        -0.8528686, 0.2472160, -0.4598908,
+        -0.1736482, 0.6963642,  0.6963642;
+
+  Vector3f t;
+  t << 1,
+      10,
+      -5;
+  
+  Vector3f x;
+  x << 5,
+      -1,
+       7;
+
+  Vector3f new_x = transformPt(dcm, t, x);
+
+  Vector3f truth;
+  truth << -1.0685963,
+            2.2692054,
+           -1.6900558;
+
+  return new_x.isApprox(truth);
+}
+
+
+
+
+bool test_transformPt_pose()
+{
+  PoseMatrix pose;
+  pose << 0.4924039, 0.6737663, -0.5509785,  1,
+         -0.8528686, 0.2472160, -0.4598908, 10,
+         -0.1736482, 0.6963642,  0.6963642, -5;
+  
+  Vector3f x;
+  x << 5,
+      -1,
+       7;
+
+  Vector3f new_x = transformPt(pose, x);
+
+  Vector3f truth;
+  truth << -1.0685963,
+            2.2692054,
+           -1.6900558;
+
+  return new_x.isApprox(truth);
+}
+
+
+
+
+bool test_bearingLla()
+{
+  Vector3f lla_1;
+  lla_1 << 39, // lat - degrees
+           27, // lon - degrees
+            0; // alt - m
+  
+  Vector3f lla_2;
+  lla_2 << 39.001, // lat - degrees
+           27.002, // lon - degrees
+            0;     // alt - m
+  
+  float bearing = bearingLla(lla_1, lla_2, DEGREES);
+
+  float truth = 57.2442;
+  
+  if (abs(truth - bearing) <= 1e-10)
+    return true;
+  return false;
+}
+
+
+
+
+bool test_distanceLla()
+{
+  Vector3f lla_1;
+  lla_1 << 39, // lat - degrees
+           27, // lon - degrees
+            0; // alt - m
+  
+  Vector3f lla_2;
+  lla_2 << 39.001, // lat - degrees
+           27.002, // lon - degrees
+            0;     // alt - m
+  
+  float dist = distanceLla(lla_1, lla_2, DEGREES);
+
+  float truth = 205.5;
+  
+  if (abs(truth - dist) <= 1e-10)
+    return true;
+  return false;
+}
+
+
+
+
+bool test_LDAE2lla()
+{
+  Vector3f lla;
+  lla << 39, // lat - degrees
+         27, // lon - degrees
+          0; // alt - m
+
+  float dist      = 1000; // m
+  float azimuth   = 45;   // degrees
+  float elevation = 0;    // degrees
+  
+  Vector3f dest = LDAE2lla(lla, dist, azimuth, elevation, DEGREES);
+  Serial.println();
+  Serial.println("LLA Computed:");
+  printVec3f(dest);
+
+  Vector3f truth;
+  truth << 39.00638889, // lat - degrees
+           29.00805556, // lon - degrees
+            0;          // alt - m
+  
+  return dest.isApprox(truth);
 }

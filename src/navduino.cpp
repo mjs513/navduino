@@ -13,7 +13,6 @@ using namespace Eigen;
 
 
 
-
 /*
   Description:
   ------------
@@ -600,13 +599,13 @@ Vector3f lla2ecef(const Vector3f& lla, const bool& angle_unit)
 
   Arguments:
   ----------
-  * const Vector3f& ecef    - ECEF coordinate in meters
+  * const Vector3f& ecef   - ECEF coordinate in meters
   * const bool& angle_unit - Unit of the latitude and longitude angles (rad
                              or degrees)
 
   Returns:
   --------
-  * Vector3f& lla - LLA coordinate (altitude in meters)
+  * Vector3f lla - LLA coordinate (altitude in meters)
 */
 Vector3f ecef2lla(const Vector3f& ecef, const bool& angle_unit)
 {
@@ -667,14 +666,14 @@ Vector3f ecef2lla(const Vector3f& ecef, const bool& angle_unit)
 
   Arguments:
   ----------
-  * const Vector3f& ecef     - ECEF coordinate in meters
+  * const Vector3f& ecef    - ECEF coordinate in meters
   * const Vector3f& lla_ref - LLA coordinate of the NED frame origin (altitude in meters)
   * const bool& angle_unit  - Unit of the latitude and longitude angles (rad
                               or degrees)
 
   Returns:
   --------
-  * Vector3f& ned - NED coordinate in meters
+  * Vector3f ned - NED coordinate in meters
 */
 Vector3f ecef2ned(const Vector3f& ecef, const Vector3f& lla_ref, const bool& angle_unit)
 {
@@ -721,14 +720,14 @@ Vector3f ecef2ned(const Vector3f& ecef, const Vector3f& lla_ref, const bool& ang
 
   Arguments:
   ----------
-  * const Vector3f& lla      - LLA coordinate (altitude in meters)
+  * const Vector3f& lla     - LLA coordinate (altitude in meters)
   * const Vector3f& lla_ref - LLA coordinate of the NED frame origin (altitude in meters)
   * const bool& angle_unit  - Unit of the latitude and longitude angles (rad
                               or degrees)
 
   Returns:
   --------
-  * Vector3f& ned - NED coordinate in meters
+  * Vector3f ned - NED coordinate in meters
 */
 Vector3f lla2ned(const Vector3f& lla, const Vector3f& lla_ref, const bool& angle_unit)
 {
@@ -810,7 +809,7 @@ Vector3f ned2ecef(const Vector3f& ned, const Vector3f& lla_ref, const bool& angl
 
   Returns:
   --------
-  * Vector3f& lla - LLA coordinate (altitude in meters)
+  * Vector3f lla - LLA coordinate (altitude in meters)
 */
 Vector3f ned2lla(const Vector3f& ned, const Vector3f& lla_ref, const bool& angle_unit)
 {
@@ -821,6 +820,108 @@ Vector3f ned2lla(const Vector3f& ned, const Vector3f& lla_ref, const bool& angle
     Vector3f lla = ecef2lla(ecef, angle_unit);
 
     return lla;
+}
+
+
+
+
+/*
+  Description:
+  ------------
+  Create a 3x4 pose matrix that can be used to apply an affine transform of a
+  3 dimensional vector/point from one coordinate frame to another. The two
+  coordinate frames do not need to be colocated.
+
+  https://en.wikipedia.org/wiki/Affine_transformation
+
+  Arguments:
+  ----------
+  * const Matrix3f& dcm - Direction cosine matrix that describes the rotation
+                          between the two coordinate frames
+  * const Vector3f& t   - Translation vector between the origins of the two
+                          coordinate frames (unit of distance is arbitrary - 
+                          up to the user to decide)
+
+  Returns:
+  --------
+  * PoseMatrix poseMatrix - 3x4 pose matrix for affine coordinate frame transforms
+*/
+PoseMatrix poseMat(const Matrix3f& dcm, const Vector3f& t)
+{
+    PoseMatrix poseMatrix;
+    poseMatrix(seq(0, 2), seq(0, 2)) << dcm;
+    poseMatrix(seq(0, 2), 3) << t;
+
+    return poseMatrix;
+}
+
+
+
+
+/*
+  Description:
+  ------------
+  Applies an affine transformation to vector/point x described by the given DCM and
+  translation vector. This affine transformation converts the vector/point x from
+  it's initial coordinate frame to another. A common use of this function would be
+  to convert a 3D point in an airplane's sensor's body frame into the airplane's
+  body frame (and vice versa).
+
+  https://en.wikipedia.org/wiki/Affine_transformation
+
+  Arguments:
+  ----------
+  * const Matrix3f& dcm - Direction cosine matrix that describes the rotation
+                          between the two coordinate frames
+  * const Vector3f& t   - Translation vector between the origins of the two
+                          coordinate frames (unit of distance is arbitrary -
+                          up to the user to decide)
+  * const Vector3f& x   - The vector/point to be transformed
+
+  Returns:
+  --------
+  * Vector3f new_x - The vector/point transformed to the new coordinate frame
+*/
+Vector3f transformPt(const Matrix3f& dcm, const Vector3f& t, const Vector3f& x)
+{
+    Vector4f x_1;
+    x_1 << x;
+    x_1(3) = 1;
+
+    return poseMat(dcm, t) * x_1;
+}
+
+
+
+
+/*
+  Description:
+  ------------
+  Applies an affine transformation to vector/point x described by the given pose
+  matrix. This affine transformation converts the vector/point x from it's
+  initial coordinate frame to another. A common use of this function would be
+  to convert a 3D point in an airplane's sensor's body frame into the airplane's
+  body frame (and vice versa).
+
+  https://en.wikipedia.org/wiki/Affine_transformation
+
+  Arguments:
+  ----------
+  * const PoseMatrix& poseMatrix - 3x4 pose matrix for affine coordinate frame
+                                   transforms
+  * const Vector3f& x            - The vector/point to be transformed
+
+  Returns:
+  --------
+  * Vector3f new_x - The vector/point transformed to the new coordinate frame
+*/
+Vector3f transformPt(const PoseMatrix& poseMatrix, const Vector3f& x)
+{
+    Vector4f x_1;
+    x_1 << x;
+    x_1(3) = 1;
+
+    return poseMatrix * x_1;
 }
 
 

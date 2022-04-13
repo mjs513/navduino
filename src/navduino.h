@@ -28,6 +28,11 @@ using namespace Eigen;
 
 
 
+typedef Matrix<float, 3, 4> PoseMatrix;
+
+
+
+
 // Rotation conversions
 Matrix3f angle2dcm(const Vector3f& angles, const bool& angle_unit = DEGREES, const bool& NED_to_body = true, const int& rotation_sequence = 321);
 Vector3f dcm2angle(const Matrix3f& dcm, const bool& angle_unit = DEGREES, const bool& NED_to_body = true, const int& rotation_sequence = 321);
@@ -53,6 +58,11 @@ Vector3f ecef2ned(const Vector3f& ecef, const Vector3f& lla_ref, const bool& ang
 Vector3f lla2ned(const Vector3f& lla, const Vector3f& lla_ref, const bool& angle_unit = DEGREES);
 Vector3f ned2ecef(const Vector3f& ned, const Vector3f& lla_ref, const bool& angle_unit = DEGREES);
 Vector3f ned2lla(const Vector3f& ned, const Vector3f& lla_ref, const bool& angle_unit = DEGREES);
+
+// Pose functions
+PoseMatrix poseMat(const Matrix3f& dcm, const Vector3f& t);
+Vector3f transformPt(const Matrix3f& dcm, const Vector3f& t, const Vector3f& x);
+Vector3f transformPt(const PoseMatrix& poseMatrix, const Vector3f& x);
 
 // Linear algebra
 Matrix3f skew(const Vector3f& w);
