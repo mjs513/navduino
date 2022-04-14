@@ -3,6 +3,11 @@
 
 
 
+const float THRESH = 1e-10;
+
+
+
+
 void setup()
 {
   Serial.begin(115200);
@@ -281,7 +286,7 @@ bool test_earthGeoRad()
 
   float truth = 6371141.23065; // m
 
-  if (abs(truth - radius) <= 1e-10)
+  if (abs(truth - radius) <= THRESH)
     return true;
   return false;
 }
@@ -314,7 +319,7 @@ bool test_earthAzimRad()
 
   float truth = 6.373264e6;
   
-  if (abs(truth - earad) <= 1e-10)
+  if (abs(truth - earad) <= THRESH)
     return true;
   return false;
 }
@@ -469,12 +474,13 @@ bool test_poseMat()
       10,
       -5;
 
-  PoseMatrix pose = poseMat(dcm, t);
+  Matrix4f pose = poseMat(dcm, t);
 
-  PoseMatrix truth;
+  Matrix4f truth;
   truth << 0.4924039, 0.6737663, -0.5509785,  1,
           -0.8528686, 0.2472160, -0.4598908, 10,
-          -0.1736482, 0.6963642,  0.6963642, -5;
+          -0.1736482, 0.6963642,  0.6963642, -5,
+           0.0      , 0.0      ,  0.0      ,  1;
 
   return pose.isApprox(truth);
 }
@@ -514,7 +520,7 @@ bool test_transformPt_dcm_t()
 
 bool test_transformPt_pose()
 {
-  PoseMatrix pose;
+  Matrix4f pose;
   pose << 0.4924039, 0.6737663, -0.5509785,  1,
          -0.8528686, 0.2472160, -0.4598908, 10,
          -0.1736482, 0.6963642,  0.6963642, -5;
@@ -553,7 +559,7 @@ bool test_bearingLla()
 
   float truth = 57.2442;
   
-  if (abs(truth - bearing) <= 1e-10)
+  if (abs(truth - bearing) <= THRESH)
     return true;
   return false;
 }
@@ -577,7 +583,7 @@ bool test_distanceLla()
 
   float truth = 205.5;
   
-  if (abs(truth - dist) <= 1e-10)
+  if (abs(truth - dist) <= THRESH)
     return true;
   return false;
 }

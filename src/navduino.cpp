@@ -871,13 +871,14 @@ Vector3f ned2lla(const Vector3f& ned, const Vector3f& lla_ref, const bool& angle
 
   Returns:
   --------
-  * PoseMatrix poseMatrix - 3x4 pose matrix for affine coordinate frame transforms
+  * Matrix4f poseMatrix - 3x4 pose matrix for affine coordinate frame transforms
 */
-PoseMatrix poseMat(const Matrix3f& dcm, const Vector3f& t)
+Matrix4f poseMat(const Matrix3f& dcm, const Vector3f& t)
 {
-    PoseMatrix poseMatrix;
+    Matrix4f poseMatrix;
     poseMatrix(seq(0, 2), seq(0, 2)) << dcm;
     poseMatrix(seq(0, 2), 3) << t;
+    poseMatrix(3, 3) = 1;
 
     return poseMatrix;
 }
@@ -915,7 +916,10 @@ Vector3f transformPt(const Matrix3f& dcm, const Vector3f& t, const Vector3f& x)
     x_1 << x;
     x_1(3) = 1;
 
-    return poseMat(dcm, t) * x_1;
+    Vector4f new_x_1 = poseMat(dcm, t) * x_1;
+    Vector3f new_x   = new_x_1(seq(0, 2));
+
+    return new_x;
 }
 
 
@@ -934,7 +938,7 @@ Vector3f transformPt(const Matrix3f& dcm, const Vector3f& t, const Vector3f& x)
 
   Arguments:
   ----------
-  * const PoseMatrix& poseMatrix - 3x4 pose matrix for affine coordinate frame
+  * const Matrix4f& poseMatrix - 3x4 pose matrix for affine coordinate frame
                                    transforms
   * const Vector3f& x            - The vector/point to be transformed
 
@@ -942,13 +946,16 @@ Vector3f transformPt(const Matrix3f& dcm, const Vector3f& t, const Vector3f& x)
   --------
   * Vector3f new_x - The vector/point transformed to the new coordinate frame
 */
-Vector3f transformPt(const PoseMatrix& poseMatrix, const Vector3f& x)
+Vector3f transformPt(const Matrix4f& poseMatrix, const Vector3f& x)
 {
     Vector4f x_1;
     x_1 << x;
     x_1(3) = 1;
 
-    return poseMatrix * x_1;
+    Vector4f new_x_1 = poseMatrix * x_1;
+    Vector3f new_x = new_x_1(seq(0, 2));
+
+    return new_x;
 }
 
 
