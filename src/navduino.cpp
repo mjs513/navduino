@@ -889,6 +889,61 @@ Matrix4f poseMat(const Matrix3f& dcm, const Vector3f& t)
 /*
   Description:
   ------------
+  Extract the DCM from a given pose matrix.
+
+  https://en.wikipedia.org/wiki/Affine_transformation
+  https://en.wikipedia.org/wiki/Rotation_matrix
+
+  Arguments:
+  ----------
+  * const Matrix4f& poseMatrix - 4x4 pose matrix for affine coordinate frame
+                                 transforms
+
+  Returns:
+  --------
+  * Matrix3f dcm - DCM extracted from pose matrix
+*/
+Matrix3f pose2dcm(const Matrix4f& poseMatrix)
+{
+    Matrix3f dcm;
+    dcm << poseMatrix(seq(0, 2), seq(0, 2));
+
+    return dcm;
+}
+
+
+
+
+/*
+  Description:
+  ------------
+  Extract translation vector from a given pose matrix.
+
+  https://en.wikipedia.org/wiki/Affine_transformation
+
+  Arguments:
+  ----------
+  * const Matrix4f& poseMatrix - 4x4 pose matrix for affine coordinate frame
+                                 transforms
+
+  Returns:
+  --------
+  * Vector3f t - Translation vector extracted from pose matrix
+*/
+Vector3f pose2t(const Matrix4f& poseMatrix)
+{
+    Vector3f t;
+    t << poseMatrix(seq(0, 2), 3);
+
+    return t;
+}
+
+
+
+
+/*
+  Description:
+  ------------
   Create a reversed 4x4 pose matrix.
 
   https://en.wikipedia.org/wiki/Affine_transformation
@@ -905,13 +960,111 @@ Matrix4f poseMat(const Matrix3f& dcm, const Vector3f& t)
 */
 Matrix4f reversePoseMat(const Matrix4f& poseMatrix)
 {
-    Matrix3f dcm;
-    dcm << poseMatrix(seq(0, 2), seq(0, 2));
-
-    Vector3f t;
-    t << poseMatrix(seq(0, 2), 3);
+    Matrix3f dcm = pose2dcm(poseMatrix);
+    Vector3f t   = pose2t(poseMatrix);
 
     return poseMat(dcm.transpose(), dcm.transpose() * -t);
+}
+
+
+
+
+/*
+  Description:
+  ------------
+  Compute the matrix derivative of the given pose matrix w.r.t the given variable.
+  The possible variables include:
+  * dRx - w.r.t. rotation around the x axis
+  * dRy - w.r.t. rotation around the y axis
+  * dRz - w.r.t. rotation around the z axis
+  * dtx - w.r.t. translation around the x axis
+  * dty - w.r.t. translation around the y axis
+  * dtz - w.r.t. translation around the z axis
+  
+  This operation is often used when constructing Jacobian matrices for optimization
+  problems (i.e. least squares/GN optimization)
+
+  https://en.wikipedia.org/wiki/Affine_transformation
+  https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant
+  https://en.wikipedia.org/wiki/Gauss%E2%80%93Newton_algorithm
+
+  Arguments:
+  ----------
+  * const Matrix4f& poseMatrix - 4x4 pose matrix for affine coordinate frame
+                                 transforms
+  * const int& derivType       - Variable to take the derivative w.r.t.
+
+  Returns:
+  --------
+  * Matrix4f poseMatrix - Pose matrix derivative
+*/
+Matrix4f poseMatDeriv(const Matrix4f& poseMatrix, const int& derivType)
+{
+    Matrix4f derivPose;
+    Matrix3f dcm = pose2dcm(poseMatrix);
+    Vector3f vec;
+
+    switch(derivType)
+    {
+        case dRx:
+        {
+            vec << 1, 0, 0;
+
+            derivPose(seq(0, 2), seq(0, 2)) << skew(vec) * dcm;
+            break;
+        }
+
+        case dRy:
+        {
+            vec << 0, 1, 0;
+
+            derivPose(seq(0, 2), seq(0, 2)) << skew(vec) * dcm;
+            break;
+        }
+
+        case dRz:
+        {
+            vec << 0, 0, 1;
+
+            derivPose(seq(0, 2), seq(0, 2)) << skew(vec) * dcm;
+            break;
+        }
+
+        case dtx:
+        {
+            vec << 1, 0, 0;
+
+            Matrix4f tempPose;
+            tempPose(3, seq(0, 2)) << vec;
+
+            derivPose << tempPose * poseMatrix;
+            break;
+        }
+
+        case dty:
+        {
+            vec << 0, 1, 0;
+
+            Matrix4f tempPose;
+            tempPose(3, seq(0, 2)) << vec;
+
+            derivPose << tempPose * poseMatrix;
+            break;
+        }
+
+        case dtz:
+        {
+            vec << 0, 0, 1;
+
+            Matrix4f tempPose;
+            tempPose(3, seq(0, 2)) << vec;
+
+            derivPose << tempPose * poseMatrix;
+            break;
+        }
+    }
+
+    return derivPose;
 }
 
 
@@ -1010,7 +1163,7 @@ Vector3f transformPt(const Matrix4f& poseMatrix, const Vector3f& x)
 */
 Matrix3f skew(const Vector3f& w)
 {
-    Matrix3f C(3, 3);
+    Matrix3f C;
 
     C << 0.0, -w(2),  w(1),
         w(2),   0.0, -w(0),
