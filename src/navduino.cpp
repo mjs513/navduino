@@ -855,7 +855,7 @@ Vector3f ned2lla(const Vector3f& ned, const Vector3f& lla_ref, const bool& angle
 /*
   Description:
   ------------
-  Create a 3x4 pose matrix that can be used to apply an affine transform of a
+  Create a 4x4 pose matrix that can be used to apply an affine transform of a
   3 dimensional vector/point from one coordinate frame to another. The two
   coordinate frames do not need to be colocated.
 
@@ -871,7 +871,7 @@ Vector3f ned2lla(const Vector3f& ned, const Vector3f& lla_ref, const bool& angle
 
   Returns:
   --------
-  * Matrix4f poseMatrix - 3x4 pose matrix for affine coordinate frame transforms
+  * Matrix4f poseMatrix - 4x4 pose matrix for affine coordinate frame transforms
 */
 Matrix4f poseMat(const Matrix3f& dcm, const Vector3f& t)
 {
@@ -881,6 +881,37 @@ Matrix4f poseMat(const Matrix3f& dcm, const Vector3f& t)
     poseMatrix(3, 3) = 1;
 
     return poseMatrix;
+}
+
+
+
+
+/*
+  Description:
+  ------------
+  Create a reversed 4x4 pose matrix.
+
+  https://en.wikipedia.org/wiki/Affine_transformation
+
+  Arguments:
+  ----------
+  * const Matrix4f& poseMatrix - 4x4 pose matrix for affine coordinate frame
+                                 transforms
+
+  Returns:
+  --------
+  * Matrix4f poseMatrix - Reversed 4x4 pose matrix for affine coordinate frame
+                          transforms
+*/
+Matrix4f reversePoseMat(const Matrix4f& poseMatrix)
+{
+    Matrix3f dcm;
+    dcm << poseMatrix(seq(0, 2), seq(0, 2));
+
+    Vector3f t;
+    t << poseMatrix(seq(0, 2), 3);
+
+    return poseMat(dcm.transpose(), dcm.transpose() * -t);
 }
 
 
@@ -938,9 +969,9 @@ Vector3f transformPt(const Matrix3f& dcm, const Vector3f& t, const Vector3f& x)
 
   Arguments:
   ----------
-  * const Matrix4f& poseMatrix - 3x4 pose matrix for affine coordinate frame
-                                   transforms
-  * const Vector3f& x            - The vector/point to be transformed
+  * const Matrix4f& poseMatrix - 4x4 pose matrix for affine coordinate frame
+                                 transforms
+  * const Vector3f& x          - The vector/point to be transformed
 
   Returns:
   --------

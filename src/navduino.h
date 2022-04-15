@@ -57,6 +57,7 @@ Vector3f ned2lla(const Vector3f& ned, const Vector3f& lla_ref, const bool& angle
 
 // Pose functions
 Matrix4f poseMat(const Matrix3f& dcm, const Vector3f& t);
+Matrix4f reversePoseMat(const Matrix4f& poseMatrix);
 Vector3f transformPt(const Matrix3f& dcm, const Vector3f& t, const Vector3f& x);
 Vector3f transformPt(const Matrix4f& poseMatrix, const Vector3f& x);
 
