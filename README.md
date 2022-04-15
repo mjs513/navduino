@@ -38,15 +38,17 @@ Vector3f navRate(const Vector3f& vned, const Vector3f& lla, const bool& angle_un
 // Frame conversions
 Vector3f lla2ecef(const Vector3f& lla, const bool& angle_unit = DEGREES);
 Vector3f ecef2lla(const Vector3f& ecef, const bool& angle_unit = DEGREES);
+Matrix3f ecef2ned_dcm(const Vector3f& lla, const bool& angle_unit = DEGREES);
 Vector3f ecef2ned(const Vector3f& ecef, const Vector3f& lla_ref, const bool& angle_unit = DEGREES);
 Vector3f lla2ned(const Vector3f& lla, const Vector3f& lla_ref, const bool& angle_unit = DEGREES);
 Vector3f ned2ecef(const Vector3f& ned, const Vector3f& lla_ref, const bool& angle_unit = DEGREES);
 Vector3f ned2lla(const Vector3f& ned, const Vector3f& lla_ref, const bool& angle_unit = DEGREES);
 
 // Pose functions
-PoseMatrix poseMat(const Matrix3f& dcm, const Vector3f& t);
+Matrix4f poseMat(const Matrix3f& dcm, const Vector3f& t);
+Matrix4f reversePoseMat(const Matrix4f& poseMatrix);
 Vector3f transformPt(const Matrix3f& dcm, const Vector3f& t, const Vector3f& x);
-Vector3f transformPt(const PoseMatrix& poseMatrix, const Vector3f& x);
+Vector3f transformPt(const Matrix4f& poseMatrix, const Vector3f& x);
 
 // Linear algebra
 Matrix3f skew(const Vector3f& w);
