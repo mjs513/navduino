@@ -876,6 +876,10 @@ Vector3f ned2lla(const Vector3f& ned, const Vector3f& lla_ref, const bool& angle
 Matrix4f poseMat(const Matrix3f& dcm, const Vector3f& t)
 {
     Matrix4f poseMatrix;
+    poseMatrix << 0, 0, 0, 0,
+                  0, 0, 0, 0,
+                  0, 0, 0, 0,
+                  0, 0, 0, 0;
     poseMatrix(seq(0, 2), seq(0, 2)) << dcm;
     poseMatrix(seq(0, 2), 3) << t;
     poseMatrix(3, 3) = 1;

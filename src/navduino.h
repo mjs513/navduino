@@ -99,6 +99,7 @@ void printVec3f(const Vector3f& vec, const int& p = 5, Stream& stream = Serial);
 void printVec4f(const Vector4f& vec, const int& p = 5, Stream& stream = Serial);
 void printQuatf(const Quaternionf& quat, const int& p = 5, Stream& stream = Serial);
 void printMat3f(const Matrix3f& mat, const int& p = 5, Stream& stream = Serial);
+void printMat4f(const Matrix4f& mat, const int& p = 5, Stream& stream = Serial);
 
 // Constrain functions
 float float_constrain(const float& input, const float& min, const float& max);

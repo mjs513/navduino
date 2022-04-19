@@ -103,6 +103,30 @@ void setup()
     Serial.println("poseMat() failed <-----");
 
   
+  if (test_pose2dcm())
+    Serial.println("pose2dcm() passed");
+  else
+    Serial.println("pose2dcm() failed <-----");
+
+  
+  if (test_pose2t())
+    Serial.println("pose2t() passed");
+  else
+    Serial.println("pose2t() failed <-----");
+
+  
+  if (test_reversePoseMat())
+    Serial.println("reversePoseMat() passed");
+  else
+    Serial.println("reversePoseMatt() failed <-----");
+
+  
+  if (test_poseMatDeriv())
+    Serial.println("poseMatDeriv() passed");
+  else
+    Serial.println("poseMatDeriv() failed <-----");
+
+  
   if (test_transformPt_dcm_t())
     Serial.println("transformPt(dcm, t) passed");
   else
@@ -113,6 +137,12 @@ void setup()
     Serial.println("transformPt(pose) passed");
   else
     Serial.println("transformPt(pose) failed <-----");
+
+  
+  if (test_skew())
+    Serial.println("skew passed");
+  else
+    Serial.println("skew failed <-----");
 
   
   if (test_bearingLla())
@@ -488,6 +518,87 @@ bool test_poseMat()
 
 
 
+bool test_pose2dcm()
+{
+  Matrix3f dcm(3, 3);
+  dcm << 0.4924039, 0.6737663, -0.5509785,
+        -0.8528686, 0.2472160, -0.4598908,
+        -0.1736482, 0.6963642,  0.6963642;
+
+  Vector3f t;
+  t << 1,
+      10,
+      -5;
+
+  Matrix3f testDcm = pose2dcm(poseMat(dcm, t));
+  
+  Matrix3f truth;
+  truth << dcm;
+
+  return testDcm.isApprox(truth);
+}
+
+
+
+
+bool test_pose2t()
+{
+  Matrix3f dcm(3, 3);
+  dcm << 0.4924039, 0.6737663, -0.5509785,
+        -0.8528686, 0.2472160, -0.4598908,
+        -0.1736482, 0.6963642,  0.6963642;
+
+  Vector3f t;
+  t << 1,
+      10,
+      -5;
+
+  Vector3f testTranslation = pose2t(poseMat(dcm, t));
+  
+  Vector3f truth;
+  truth << t;
+
+  return testTranslation.isApprox(truth);
+}
+
+
+
+
+bool test_reversePoseMat()
+{
+  Matrix3f dcm(3, 3);
+  dcm << 0.4924039, 0.6737663, -0.5509785,
+        -0.8528686, 0.2472160, -0.4598908,
+        -0.1736482, 0.6963642,  0.6963642;
+
+  Vector3f t;
+  t << 1,
+      10,
+      -5;
+
+  Matrix4f reversed = reversePoseMat(poseMat(dcm, t));
+  
+  Matrix4f truth;
+  truth << 0.4924039, -0.8528686, -0.1736482, 7.1680411,
+           0.6737663,  0.2472160,  0.6963642, 0.3358947,
+          -0.5509785, -0.4598908,  0.6963642, 8.6317075,
+           0.0,        0.0,        0.0,       1.0;
+
+  return reversed.isApprox(truth);
+}
+
+
+
+
+bool test_poseMatDeriv()
+{
+  // TODO ***********************************
+  return false;
+}
+
+
+
+
 bool test_transformPt_dcm_t()
 {
   Matrix3f dcm(3, 3);
@@ -538,6 +649,26 @@ bool test_transformPt_pose()
            -1.6900558;
 
   return new_x.isApprox(truth);
+}
+
+
+
+
+bool test_skew()
+{
+  Vector3f x;
+  x << 5,
+      -1,
+       7;
+
+  Matrix3f ssm = skew(x);
+
+  Matrix3f truth;
+  truth << 0, -7, -1,
+           7,  0, -5,
+           1,  5,  0;
+  
+  return ssm.isApprox(truth);
 }
 
 
