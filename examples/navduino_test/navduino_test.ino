@@ -8,6 +8,13 @@ const float THRESH = 1e-10;
 
 
 
+vehicle_pose plane(0);
+payload_pose gimbal(0, 0);
+sensor_pose fpvCam(0, 0, 0);
+
+
+
+
 void setup()
 {
   Serial.begin(115200);
@@ -161,6 +168,8 @@ void setup()
     Serial.println("LDAE2lla() passed");
   else
     Serial.println("LDAE2lla() failed <-----");
+
+  examplePoseFunc();
 }
 
 
@@ -744,4 +753,76 @@ bool test_LDAE2lla()
             0;          // alt - m
   
   return dest.isApprox(truth);
+}
+
+
+
+
+void examplePoseFunc()
+{
+  Vector3f LatLonAlt;
+  LatLonAlt << 48.858370,
+                2.294481,
+               34.000000;
+               
+  Vector3f planeAngles;
+  planeAngles << 10.0,
+                 -5.5,
+                  2.0;
+                  
+  Matrix3f planeDCM = angle2dcm(planeAngles);
+  
+  plane.update_loc_lla(LatLonAlt);
+  plane.update_dcm(planeDCM);
+
+  
+  Vector3f gimbalTranslation;
+  gimbalTranslation << 0.5,
+                       1.5,
+                      -0.2;
+
+  Vector3f gimbalAngles;
+  gimbalAngles << 45.0,
+                 -14.2,
+                   0.1;
+                    
+  Matrix3f gimbalDCM = angle2dcm(gimbalAngles);
+
+  gimbal.update_v_t_v_p(gimbalTranslation);
+  gimbal.update_p_R_v(gimbalDCM);
+
+
+  Vector3f fpvCamTranslation;
+  fpvCamTranslation << 0.01,
+                      -0.04,
+                      -0.20;
+
+  Vector3f fpvCamAngles;
+  fpvCamAngles << -1.2,
+                   2.0,
+                   0.1;
+                    
+  Matrix3f fpvCamDCM = angle2dcm(fpvCamAngles);
+
+  fpvCam.update_p_t_p_s(fpvCamTranslation);
+  fpvCam.update_s_R_p(fpvCamDCM);
+
+
+  Vector3f sensor_x;
+  sensor_x << 0.3,
+             20.0,
+             -3.5;
+
+  Vector3f plane_x = sensor2vehicle(gimbal, fpvCam, sensor_x);
+
+
+  Serial.println();
+  Serial.println();
+  Serial.println("Point sensed in the FPV camera's xyz body frame:");
+  printVec3f(sensor_x);
+  Serial.println();
+  Serial.println("The same point transformed into the airplane's xyz body frame:");
+  printVec3f(plane_x);
+  Serial.println();
+  Serial.println();
 }
