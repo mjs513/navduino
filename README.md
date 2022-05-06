@@ -5,6 +5,7 @@ Arduino library for basic aerial navigation functions used for
 * [Euler angles](https://en.wikipedia.org/wiki/Euler_angles)
 * [Direction cosine matrices](https://en.wikipedia.org/wiki/Rotation_matrix)
 * [Quaternions](https://eater.net/quaternions)
+* [Rodrigues Rotation Vectors](https://courses.cs.duke.edu/fall13/compsci527/notes/rodrigues.pdf)
 * [Earth radii calculations](https://en.wikipedia.org/wiki/Earth_radius)
 * Earth rotation rate calculations
 * Frame conversions
@@ -47,7 +48,13 @@ Vector3f dcm2angle(const Matrix3f& dcm, const bool& angle_unit = DEGREES, const 
 Quaternionf angle2quat(const Vector3f& angles, const bool& angle_unit = DEGREES, const bool& NED_to_body = true, const int& rotation_sequence = 321);
 Vector3f quat2angle(const Quaternionf& quat, const bool& angle_unit = DEGREES, const bool& NED_to_body = true, const int& rotation_sequence = 321);
 Matrix3f quat2dcm(const Quaternionf& quat);
-Quaternionf dcm2quat(const Matrix3f& C);
+Quaternionf dcm2quat(const Matrix3f& dcm);
+Matrix3f vec2dcm(const Vector3f& vec);
+Vector3f dcm2vec(const Matrix3f& dcm);
+Quaternionf vec2quat(const Vector3f& vec);
+Vector3f quat2vec(const Quaternionf& quat);
+Vector3f vec2angle(const Vector3f& vec, const bool& angle_unit = DEGREES, const bool& NED_to_body = true, const int& rotation_sequence = 321);
+Vector3f angle2vec(const Vector3f& angles, const bool& angle_unit = DEGREES, const bool& NED_to_body = true, const int& rotation_sequence = 321);
 
 // Earth radius calculations
 float earthGeoRad(const float& _lat, const bool& angle_unit = DEGREES);
