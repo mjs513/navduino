@@ -37,7 +37,7 @@ using namespace Eigen;
   
   Returns:
   --------
-  * Matrix3f dcm - Rotates vectors from one coordinate frame to the other
+  * Matrix3f dcm - Direction cosine matrix (rotation matix)
 */
 Matrix3f angle2dcm(const Vector3f& angles, const bool& angle_unit, const bool& NED_to_body, const int& rotation_sequence)
 {
@@ -114,7 +114,7 @@ Matrix3f angle2dcm(const Vector3f& angles, const bool& angle_unit, const bool& N
 
   Arguments:
   ----------
-  * const Matrix3f& dcm          - Rotates vectors from one coordinate frame to the other
+  * const Matrix3f& dcm          - Direction cosine matrix (rotation matix)
   * const bool& angle_unit       - Unit of the euler angles (rad or degrees)
   * const bool& NED_to_body      - Rotate either to or from the NED frame
   * const int& rotation_sequence - The order in which the euler angles are applied
@@ -261,7 +261,7 @@ Matrix3f quat2dcm(const Quaternionf& quat)
 
   Arguments:
   ----------
-  * const Matrix3f& dcm          - Rotates vectors from one coordinate frame to the other
+  * const Matrix3f& dcm          - Direction cosine matrix (rotation matix)
   * const bool& angle_unit       - Unit of the euler angles (rad or degrees)
   * const bool& NED_to_body      - Rotate either to or from the NED frame
   * const int& rotation_sequence - The order in which the euler angles are applied
@@ -272,10 +272,178 @@ Matrix3f quat2dcm(const Quaternionf& quat)
   --------
   * Quaternionf quat - Quaternion that describes the rotation
 */
-Quaternionf dcm2quat(const Matrix3f& C)
+Quaternionf dcm2quat(const Matrix3f& dcm)
 {
-    Quaternionf quat(C);
+    Quaternionf quat(dcm);
     return quat;
+}
+
+
+
+
+/*
+  Description:
+  ------------
+  Convert a Rodrigues rotation vector to a DCM.
+
+  **NOTE: The Rodrigues vector's rotation angle must be in RADIANS.**
+
+  https://courses.cs.duke.edu/fall13/compsci527/notes/rodrigues.pdf
+  https://en.wikipedia.org/wiki/Rotation_matrix
+
+  Arguments:
+  ----------
+  * const Vector3f& vec - Rodrigues rotation vector
+
+  Returns:
+  --------
+  * Matrix3f dcm - Direction cosine matrix (rotation matix)
+*/
+Matrix3f vec2dcm(const Vector3f& vec)
+{
+    float theta   = vec.norm();
+    Vector3f axis = vec / theta;
+
+    AngleAxisf angAxis(theta, axis);
+    return angAxis.toRotationMatrix();
+}
+
+
+
+
+/*
+  Description:
+  ------------
+  Convert a DCM to a Rodrigues rotation vector.
+
+  https://courses.cs.duke.edu/fall13/compsci527/notes/rodrigues.pdf
+  https://en.wikipedia.org/wiki/Rotation_matrix
+
+  Arguments:
+  ----------
+  * const Matrix3f& dcm - Direction cosine matrix (rotation matix)
+
+  Returns:
+  --------
+  * Vector3f vec - Rodrigues rotation vector (rotation angle is in RADIANS)
+*/
+Vector3f dcm2vec(const Matrix3f& dcm)
+{
+    AngleAxisf angAxis(dcm);
+    return angAxis.angle() * angAxis.axis();
+}
+
+
+
+
+/*
+  Description:
+  ------------
+  Convert a Rodrigues rotation vector to a quaternion.
+
+  **NOTE: The Rodrigues vector's rotation angle must be in RADIANS.**
+
+  https://courses.cs.duke.edu/fall13/compsci527/notes/rodrigues.pdf
+  https://eater.net/quaternions
+
+  Arguments:
+  ----------
+  * const Vector3f& vec - Rodrigues rotation vector
+
+  Returns:
+  --------
+  * Quaternionf quat - Quaternion that describes the rotation
+*/
+Quaternionf vec2quat(const Vector3f& vec)
+{
+    return dcm2quat(vec2dcm(vec));
+}
+
+
+
+
+/*
+  Description:
+  ------------
+  Convert a quaternion to a Rodrigues rotation vector.
+
+  https://courses.cs.duke.edu/fall13/compsci527/notes/rodrigues.pdf
+  https://eater.net/quaternions
+
+  Arguments:
+  ----------
+  * const Quaternionf& quat - Quaternion that describes the rotation
+
+  Returns:
+  --------
+  * Vector3f vec - Rodrigues rotation vector (rotation angle is in RADIANS)
+*/
+Vector3f quat2vec(const Quaternionf& quat)
+{
+    AngleAxisf angAxis(quat);
+    return angAxis.angle() * angAxis.axis();
+}
+
+
+
+
+/*
+  Description:
+  ------------
+  Convert a Rodrigues rotation vector to a vector of euler angles.
+
+  **NOTE: The Rodrigues vector's rotation angle must be in RADIANS.**
+
+  https://courses.cs.duke.edu/fall13/compsci527/notes/rodrigues.pdf
+  https://en.wikipedia.org/wiki/Axes_conventions
+  https://en.wikipedia.org/wiki/Euler_angles
+
+  Arguments:
+  ----------
+  * const Vector3f& vec          - Rodrigues rotation vector
+  * const bool& angle_unit       - Unit of the euler angles (rad or degrees)
+  * const bool& NED_to_body      - Rotate either to or from the NED frame
+  * const int& rotation_sequence - The order in which the euler angles are applied
+                                   to the rotation. 321 is the standard rotation
+                                   sequence for aerial navigation
+
+  Returns:
+  --------
+  * Vector3f angles - Vector of euler angles
+*/
+Vector3f vec2angle(const Vector3f& vec, const bool& angle_unit, const bool& NED_to_body, const int& rotation_sequence)
+{
+    return dcm2angle(vec2dcm(vec), angle_unit, NED_to_body, rotation_sequence);
+}
+
+
+
+
+/*
+  Description:
+  ------------
+  Convert a vector of euler angles to a Rodrigues rotation vector.
+
+  https://courses.cs.duke.edu/fall13/compsci527/notes/rodrigues.pdf
+  https://en.wikipedia.org/wiki/Axes_conventions
+  https://en.wikipedia.org/wiki/Euler_angles
+
+  Arguments:
+  ----------
+  * const Vector3f& angles       - Vector of euler angles
+  * const bool& angle_unit       - Unit of the euler angles (rad or degrees)
+  * const bool& NED_to_body      - Rotate either to or from the NED frame
+  * const int& rotation_sequence - The order in which the euler angles are applied
+                                   to the rotation. 321 is the standard rotation
+                                   sequence for aerial navigation
+
+  Returns:
+  --------
+  * Vector3f vec - Rodrigues rotation vector (rotation angle is in RADIANS)
+*/
+Vector3f angle2vec(const Vector3f& angles, const bool& angle_unit, const bool& NED_to_body, const int& rotation_sequence)
+{
+    return dcm2vec(angle2dcm(angles, angle_unit, NED_to_body, rotation_sequence));
 }
 
 
