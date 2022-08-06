@@ -720,14 +720,11 @@ bool test_LDAE2lla()
   float elevation = 0;    // degrees
   
   Vector3f dest = LDAE2lla(lla, dist, azimuth, elevation, DEGREES);
-  Serial.println();
-  Serial.println("LLA Computed:");
-  printVec3f(dest);
 
   Vector3f truth;
-  truth << 39.00638889, // lat - degrees
-           29.00805556, // lon - degrees
-            0;          // alt - m
+  truth << 39.006355285644531, // lat - degrees
+           27.008182525634765, // lon - degrees
+            0;                 // alt - m
   
   return dest.isApprox(truth);
 }
