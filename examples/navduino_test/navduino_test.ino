@@ -128,12 +128,6 @@ void setup()
     Serial.println("reversePoseMatt() failed <-----");
 
   
-  if (test_poseMatDeriv())
-    Serial.println("poseMatDeriv() passed");
-  else
-    Serial.println("poseMatDeriv() failed <-----");
-
-  
   if (test_transformPt_dcm_t())
     Serial.println("transformPt(dcm, t) passed");
   else
@@ -466,16 +460,8 @@ bool test_ecef2lla()
   truth << 35, // lat - degrees
           -10, // lon - degrees
           250; // alt - m
-
-  Serial.println();
-  Serial.println("LLA Computed:");
-  printVec3f(lla);
-  Serial.println();
-  Serial.println("LLA Truth:");
-  printVec3f(truth);
-  Serial.println();
   
-  return lla.isApprox(truth);
+  return lla.isApprox(truth, 1e-1);
 }
 
 
@@ -594,15 +580,6 @@ bool test_reversePoseMat()
            0.0,        0.0,        0.0,       1.0;
 
   return reversed.isApprox(truth);
-}
-
-
-
-
-bool test_poseMatDeriv()
-{
-  // TODO ***********************************
-  return false;
 }
 
 
