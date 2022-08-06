@@ -8,7 +8,7 @@
 */
 
 
-// WGS 84  Four Defining Parameters
+// WGS 84 Defining Parameters
 float a           = 6378137.0;           // Semi - major Axis[m]
 float a_sqrd      = pow(a, 2);           // Semi - major Axis[m] squared
 float f           = 1.0 / 298.257223563; // Flattening

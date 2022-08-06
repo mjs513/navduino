@@ -39,64 +39,67 @@ using namespace Eigen;
   --------
   * Matrix3f dcm - Direction cosine matrix (rotation matix)
 */
-Matrix3f angle2dcm(const Vector3f& angles, const bool& angle_unit, const bool& NED_to_body, const int& rotation_sequence)
+Matrix3f angle2dcm(const Vector3f& angles,
+                   const bool& angle_unit,
+                   const bool& NED_to_body,
+                   const int& rotation_sequence)
 {
-    float roll;
-    float pitch;
-    float yaw;
+  float roll;
+  float pitch;
+  float yaw;
 
-    if (angle_unit == DEGREES)
-    {
-        roll  = deg2rad(angles(0));
-        pitch = deg2rad(angles(1));
-        yaw   = deg2rad(angles(2));
-    }
-    else
-    {
-        roll  = angles(0);
-        pitch = angles(1);
-        yaw   = angles(2);
-    }
+  if (angle_unit == DEGREES)
+  {
+    roll  = deg2rad(angles(0));
+    pitch = deg2rad(angles(1));
+    yaw   = deg2rad(angles(2));
+  }
+  else
+  {
+    roll  = angles(0);
+    pitch = angles(1);
+    yaw   = angles(2);
+  }
 
-    Matrix3f R1(3, 3);
-    Matrix3f R2(3, 3);
-    Matrix3f R3(3, 3);
+  Matrix3f R1(3, 3);
+  Matrix3f R2(3, 3);
+  Matrix3f R3(3, 3);
 
-    R1 << 1,          0,         0,
-          0,  cos(roll), sin(roll),
-          0, -sin(roll), cos(roll);
+  R1 << 1,          0,         0,
+        0,  cos(roll), sin(roll),
+        0, -sin(roll), cos(roll);
 
-    R2 << cos(pitch), 0, -sin(pitch),
-                   0, 1,           0,
-          sin(pitch), 0,  cos(pitch);
+  R2 << cos(pitch), 0, -sin(pitch),
+                 0, 1,           0,
+        sin(pitch), 0,  cos(pitch);
 
-    R3 << cos(yaw), sin(yaw), 0,
-         -sin(yaw), cos(yaw), 0,
-                 0,        0, 1;
+  R3 << cos(yaw), sin(yaw), 0,
+       -sin(yaw), cos(yaw), 0,
+               0,        0, 1;
 
-    Matrix3f dcm(3, 3);
+  Matrix3f dcm(3, 3);
 
-    // Note that multiplication of the matrices are opposite to the
-    // rotation sequence due to how matrix multiplication works
-    if (rotation_sequence == 321)
-        dcm = R1 * R2 * R3;
-    else if (rotation_sequence == 312)
-        dcm = R2 * R1 * R3;
-    else if (rotation_sequence == 231)
-        dcm = R1 * R3 * R2;
-    else if (rotation_sequence == 213)
-        dcm = R3 * R1 * R2;
-    else if (rotation_sequence == 132)
-        dcm = R2 * R3 * R1;
-    else if (rotation_sequence == 123)
-        dcm = R3 * R2 * R1;
-    else
-        dcm = R1 * R2 * R3;
+  // Note that multiplication of the matrices are opposite to the
+  // rotation sequence due to how matrix multiplication works
+  if (rotation_sequence == 321)
+    dcm = R1 * R2 * R3;
+  else if (rotation_sequence == 312)
+    dcm = R2 * R1 * R3;
+  else if (rotation_sequence == 231)
+    dcm = R1 * R3 * R2;
+  else if (rotation_sequence == 213)
+    dcm = R3 * R1 * R2;
+  else if (rotation_sequence == 132)
+    dcm = R2 * R3 * R1;
+  else if (rotation_sequence == 123)
+    dcm = R3 * R2 * R1;
+  else
+    dcm = R1 * R2 * R3;
 
-    if (!NED_to_body)
-        return dcm.transpose();
+  if (!NED_to_body)
+    return dcm.transpose();
 
-    return dcm;
+  return dcm;
 }
 
 
@@ -125,34 +128,37 @@ Matrix3f angle2dcm(const Vector3f& angles, const bool& angle_unit, const bool& N
   --------
   * Vector3f angles - Vector of euler angles to describe the rotation
 */
-Vector3f dcm2angle(const Matrix3f& dcm, const bool& angle_unit, const bool& NED_to_body, const int& rotation_sequence)
+Vector3f dcm2angle(const Matrix3f& dcm,
+                   const bool& angle_unit,
+                   const bool& NED_to_body,
+                   const int& rotation_sequence)
 {
-    Vector3f angles;
+  Vector3f angles;
 
-    if (rotation_sequence == 321)
+  if (rotation_sequence == 321)
+  {
+    if (NED_to_body)
     {
-        if (NED_to_body)
-        {
-            angles << atan2(dcm(1, 2), dcm(2, 2)), // Roll
-                     -asin(dcm(0, 2)),             // Pitch
-                      atan2(dcm(0, 1), dcm(0, 0)); // Yaw
-        }
-        else
-        {
-            angles << atan2(dcm(2, 1), dcm(2, 2)), // Roll
-                     -asin(dcm(2, 0)),             // Pitch
-                      atan2(dcm(1, 0), dcm(0, 0)); // Yaw
-        }
+      angles << atan2(dcm(1, 2), dcm(2, 2)), // Roll
+               -asin(dcm(0, 2)),             // Pitch
+                atan2(dcm(0, 1), dcm(0, 0)); // Yaw
     }
-
-    if (angle_unit == DEGREES)
+    else
     {
-        angles(0) = rad2deg(angles(0));
-        angles(1) = rad2deg(angles(1));
-        angles(2) = rad2deg(angles(2));
+      angles << atan2(dcm(2, 1), dcm(2, 2)), // Roll
+               -asin(dcm(2, 0)),             // Pitch
+                atan2(dcm(1, 0), dcm(0, 0)); // Yaw
     }
+  }
 
-    return angles;
+  if (angle_unit == DEGREES)
+  {
+    angles(0) = rad2deg(angles(0));
+    angles(1) = rad2deg(angles(1));
+    angles(2) = rad2deg(angles(2));
+  }
+
+  return angles;
 }
 
 
@@ -180,10 +186,13 @@ Vector3f dcm2angle(const Matrix3f& dcm, const bool& angle_unit, const bool& NED_
   --------
   * Quaternionf quat - Quaternion that describes the rotation
 */
-Quaternionf angle2quat(const Vector3f& angles, const bool& angle_unit, const bool& NED_to_body, const int& rotation_sequence)
+Quaternionf angle2quat(const Vector3f& angles,
+                       const bool& angle_unit,
+                       const bool& NED_to_body,
+                       const int& rotation_sequence)
 {
-    Quaternionf quat(angle2dcm(angles, angle_unit, NED_to_body, rotation_sequence));
-    return quat;
+  Quaternionf quat(angle2dcm(angles, angle_unit, NED_to_body, rotation_sequence));
+  return quat;
 }
 
 
@@ -212,9 +221,12 @@ Quaternionf angle2quat(const Vector3f& angles, const bool& angle_unit, const boo
   --------
   * Vector3f& angles - Vector of euler angles to describe the rotation
 */
-Vector3f quat2angle(const Quaternionf& quat, const bool& angle_unit, const bool& NED_to_body, const int& rotation_sequence)
+Vector3f quat2angle(const Quaternionf& quat,
+                    const bool& angle_unit,
+                    const bool& NED_to_body,
+                    const int& rotation_sequence)
 {
-    return dcm2angle(quat.toRotationMatrix(), angle_unit, NED_to_body, rotation_sequence);
+  return dcm2angle(quat.toRotationMatrix(), angle_unit, NED_to_body, rotation_sequence);
 }
 
 
@@ -244,7 +256,7 @@ Vector3f quat2angle(const Quaternionf& quat, const bool& angle_unit, const bool&
 */
 Matrix3f quat2dcm(const Quaternionf& quat)
 {
-    return quat.toRotationMatrix();
+  return quat.toRotationMatrix();
 }
 
 
@@ -274,8 +286,8 @@ Matrix3f quat2dcm(const Quaternionf& quat)
 */
 Quaternionf dcm2quat(const Matrix3f& dcm)
 {
-    Quaternionf quat(dcm);
-    return quat;
+  Quaternionf quat(dcm);
+  return quat;
 }
 
 
@@ -301,11 +313,11 @@ Quaternionf dcm2quat(const Matrix3f& dcm)
 */
 Matrix3f vec2dcm(const Vector3f& vec)
 {
-    float theta   = vec.norm();
-    Vector3f axis = vec / theta;
+  float theta   = vec.norm();
+  Vector3f axis = vec / theta;
 
-    AngleAxisf angAxis(theta, axis);
-    return angAxis.toRotationMatrix();
+  AngleAxisf angAxis(theta, axis);
+  return angAxis.toRotationMatrix();
 }
 
 
@@ -329,8 +341,8 @@ Matrix3f vec2dcm(const Vector3f& vec)
 */
 Vector3f dcm2vec(const Matrix3f& dcm)
 {
-    AngleAxisf angAxis(dcm);
-    return angAxis.angle() * angAxis.axis();
+  AngleAxisf angAxis(dcm);
+  return angAxis.angle() * angAxis.axis();
 }
 
 
@@ -356,7 +368,7 @@ Vector3f dcm2vec(const Matrix3f& dcm)
 */
 Quaternionf vec2quat(const Vector3f& vec)
 {
-    return dcm2quat(vec2dcm(vec));
+  return dcm2quat(vec2dcm(vec));
 }
 
 
@@ -380,8 +392,8 @@ Quaternionf vec2quat(const Vector3f& vec)
 */
 Vector3f quat2vec(const Quaternionf& quat)
 {
-    AngleAxisf angAxis(quat);
-    return angAxis.angle() * angAxis.axis();
+  AngleAxisf angAxis(quat);
+  return angAxis.angle() * angAxis.axis();
 }
 
 
@@ -411,9 +423,12 @@ Vector3f quat2vec(const Quaternionf& quat)
   --------
   * Vector3f angles - Vector of euler angles
 */
-Vector3f vec2angle(const Vector3f& vec, const bool& angle_unit, const bool& NED_to_body, const int& rotation_sequence)
+Vector3f vec2angle(const Vector3f& vec,
+                   const bool& angle_unit,
+                   const bool& NED_to_body,
+                   const int& rotation_sequence)
 {
-    return dcm2angle(vec2dcm(vec), angle_unit, NED_to_body, rotation_sequence);
+  return dcm2angle(vec2dcm(vec), angle_unit, NED_to_body, rotation_sequence);
 }
 
 
@@ -441,9 +456,12 @@ Vector3f vec2angle(const Vector3f& vec, const bool& angle_unit, const bool& NED_
   --------
   * Vector3f vec - Rodrigues rotation vector (rotation angle is in RADIANS)
 */
-Vector3f angle2vec(const Vector3f& angles, const bool& angle_unit, const bool& NED_to_body, const int& rotation_sequence)
+Vector3f angle2vec(const Vector3f& angles,
+                   const bool& angle_unit,
+                   const bool& NED_to_body,
+                   const int& rotation_sequence)
 {
-    return dcm2vec(angle2dcm(angles, angle_unit, NED_to_body, rotation_sequence));
+  return dcm2vec(angle2dcm(angles, angle_unit, NED_to_body, rotation_sequence));
 }
 
 
@@ -470,15 +488,15 @@ Vector3f angle2vec(const Vector3f& angles, const bool& angle_unit, const bool& N
 */
 float earthGeoRad(const float& _lat, const bool& angle_unit)
 {
-    float lat = _lat;
+  float lat = _lat;
 
-    if (angle_unit == DEGREES)
-        lat = deg2rad(lat);
+  if (angle_unit == DEGREES)
+    lat = deg2rad(lat);
 
-    float num = pow(a_sqrd * cos(lat), 2) + pow(b_sqrd * sin(lat), 2);
-    float den = pow(a * cos(lat), 2) + pow(b * sin(lat), 2);
+  float num = pow(a_sqrd * cos(lat), 2) + pow(b_sqrd * sin(lat), 2);
+  float den = pow(a * cos(lat), 2) + pow(b * sin(lat), 2);
 
-    return sqrt(num / den);
+  return sqrt(num / den);
 }
 
 
@@ -506,19 +524,19 @@ float earthGeoRad(const float& _lat, const bool& angle_unit)
 */
 Vector2f earthRad(const float& _lat, const bool& angle_unit)
 {
-    float lat = _lat;
+  float lat = _lat;
 
-    if (angle_unit == DEGREES)
-        lat = deg2rad(lat);
+  if (angle_unit == DEGREES)
+    lat = deg2rad(lat);
 
-    float R_N = a / sqrt(1 - (ecc_sqrd * pow(sin(lat), 2)));
-    float R_M = (a * (1 - ecc_sqrd)) / pow(1 - (ecc_sqrd * pow(sin(lat), 2)), 1.5);
+  float R_N = a / sqrt(1 - (ecc_sqrd * pow(sin(lat), 2)));
+  float R_M = (a * (1 - ecc_sqrd)) / pow(1 - (ecc_sqrd * pow(sin(lat), 2)), 1.5);
 
-    Vector2f radii;
-    radii << R_N, // Earth's prime-vertical radius of curvature
-             R_M; // Earth's meridional radius of curvature
+  Vector2f radii;
+  radii << R_N, // Earth's prime-vertical radius of curvature
+           R_M; // Earth's meridional radius of curvature
 
-    return radii;
+  return radii;
 }
 
 
@@ -544,18 +562,20 @@ Vector2f earthRad(const float& _lat, const bool& angle_unit)
   --------
   * float radius - Earth's azimuthal radius in meters at a given latitude and azimuth
 */
-float earthAzimRad(const float& lat, const float& _azimuth, const bool& angle_unit)
+float earthAzimRad(const float& lat,
+                   const float& _azimuth,
+                   const bool& angle_unit)
 {
-    float azimuth = _azimuth;
+  float azimuth = _azimuth;
 
-    if (angle_unit == DEGREES)
-        azimuth = deg2rad(azimuth);
+  if (angle_unit == DEGREES)
+    azimuth = deg2rad(azimuth);
 
-    Vector2f eradvec = earthRad(lat, angle_unit);
-    float N = eradvec(0);
-    float M = eradvec(1);
+  Vector2f eradvec = earthRad(lat, angle_unit);
+  float N = eradvec(0);
+  float M = eradvec(1);
 
-    return 1 / ((pow(cos(azimuth), 2) / M) + (pow(sin(azimuth), 2) / N));
+  return 1 / ((pow(cos(azimuth), 2) / M) + (pow(sin(azimuth), 2) / N));
 }
 
 
@@ -580,17 +600,17 @@ float earthAzimRad(const float& lat, const float& _azimuth, const bool& angle_un
 */
 Vector3f earthRate(const float& _lat, const bool& angle_unit)
 {
-    float lat = _lat;
+  float lat = _lat;
 
-    if (angle_unit == DEGREES)
-        lat = deg2rad(lat);
+  if (angle_unit == DEGREES)
+    lat = deg2rad(lat);
 
-    Vector3f e;
-    e << omega_E * cos(lat),
-         0,
-        -omega_E * sin(lat);
+  Vector3f e;
+  e << omega_E * cos(lat),
+       0,
+      -omega_E * sin(lat);
 
-    return e;
+  return e;
 }
 
 
@@ -617,38 +637,40 @@ Vector3f earthRate(const float& _lat, const bool& angle_unit)
   * Vector3f lla_dot - LLA angular rates given the locally tangent velocity
                        in the NED frame and latitude
 */
-Vector3f llaRate(const Vector3f& vned, const Vector3f& lla, const bool& angle_unit)
+Vector3f llaRate(const Vector3f& vned,
+                 const Vector3f& lla,
+                 const bool& angle_unit)
 {
-    float VN = vned(0);
-    float VE = vned(1);
-    float VD = vned(2);
+  float VN = vned(0);
+  float VE = vned(1);
+  float VD = vned(2);
 
-    float lat = lla(0);
-    float alt = lla(2);
+  float lat = lla(0);
+  float alt = lla(2);
 
-    Vector2f eradvec = earthRad(lat, angle_unit);
-    float Rew = eradvec(0);
-    float Rns = eradvec(1);
+  Vector2f eradvec = earthRad(lat, angle_unit);
+  float Rew = eradvec(0);
+  float Rns = eradvec(1);
 
-    if (angle_unit == DEGREES)
-        lat = deg2rad(lat);
+  if (angle_unit == DEGREES)
+    lat = deg2rad(lat);
 
-    Vector3f lla_dot;
+  Vector3f lla_dot;
 
-    if (angle_unit == RADIANS)
-    {
-        lla_dot << VN / (Rns + alt),
-                   VE / (Rew + alt) / cos(lat),
-                  -VD;
-    }
-    else
-    {
-        lla_dot << rad2deg(VN / (Rns + alt)),
-                   rad2deg(VE / (Rew + alt) / cos(lat)),
-                  -VD;
-    }
+  if (angle_unit == RADIANS)
+  {
+    lla_dot << VN / (Rns + alt),
+               VE / (Rew + alt) / cos(lat),
+              -VD;
+  }
+  else
+  {
+    lla_dot << rad2deg(VN / (Rns + alt)),
+               rad2deg(VE / (Rew + alt) / cos(lat)),
+              -VD;
+  }
 
-    return lla_dot;
+  return lla_dot;
 }
 
 
@@ -676,37 +698,39 @@ Vector3f llaRate(const Vector3f& vned, const Vector3f& lla, const bool& angle_un
   * Vector3f rho - Navigation/transport angular rates in the ECEF frame given
                    the locally tangent velocity in the NED frame and latitude
 */
-Vector3f navRate(const Vector3f& vned, const Vector3f& lla, const bool& angle_unit)
+Vector3f navRate(const Vector3f& vned,
+                 const Vector3f& lla,
+                 const bool& angle_unit)
 {
-    float VN = vned(0);
-    float VE = vned(1);
+  float VN = vned(0);
+  float VE = vned(1);
 
-    float lat = lla(0);
-    float alt = lla(2);
+  float lat = lla(0);
+  float alt = lla(2);
 
-    Vector2f eradvec = earthRad(lat, angle_unit);
-    float Rew = eradvec(0);
-    float Rns = eradvec(1);
+  Vector2f eradvec = earthRad(lat, angle_unit);
+  float Rew = eradvec(0);
+  float Rns = eradvec(1);
 
-    if (angle_unit == DEGREES)
-        lat = deg2rad(lat);
+  if (angle_unit == DEGREES)
+    lat = deg2rad(lat);
 
-    Vector3f rho;
+  Vector3f rho;
 
-    if (angle_unit == RADIANS)
-    {
-        rho << VE / (Rew + alt),
-              -VN / (Rns + alt),
-              -VE * tan(lat) / (Rew + alt);
-    }
-    else
-    {
-        rho << rad2deg(VE / (Rew + alt)),
-               rad2deg(-VN / (Rns + alt)),
-               rad2deg(-VE * tan(lat) / (Rew + alt));
-    }
+  if (angle_unit == RADIANS)
+  {
+    rho << VE / (Rew + alt),
+          -VN / (Rns + alt),
+          -VE * tan(lat) / (Rew + alt);
+  }
+  else
+  {
+    rho << rad2deg(VE / (Rew + alt)),
+            rad2deg(-VN / (Rns + alt)),
+            rad2deg(-VE * tan(lat) / (Rew + alt));
+  }
 
-    return rho;
+  return rho;
 }
 
 
@@ -732,26 +756,26 @@ Vector3f navRate(const Vector3f& vned, const Vector3f& lla, const bool& angle_un
 */
 Vector3f lla2ecef(const Vector3f& lla, const bool& angle_unit)
 {
-    float lat = lla(0);
-    float lon = lla(1);
-    float alt = lla(2);
+  float lat = lla(0);
+  float lon = lla(1);
+  float alt = lla(2);
 
-    Vector2f eradvec = earthRad(lat, angle_unit);
-    float Rew = eradvec(0);
+  Vector2f eradvec = earthRad(lat, angle_unit);
+  float Rew = eradvec(0);
 
-    if (angle_unit == DEGREES)
-    {
-        lat = deg2rad(lat);
-        lon = deg2rad(lon);
-    }
+  if (angle_unit == DEGREES)
+  {
+    lat = deg2rad(lat);
+    lon = deg2rad(lon);
+  }
 
-    Vector3f ecef;
+  Vector3f ecef;
 
-    ecef << (Rew + alt) * cos(lat) * cos(lon),
-            (Rew + alt)* cos(lat)* sin(lon),
-            ((1 - ecc_sqrd) * Rew + alt)* sin(lat);
+  ecef << (Rew + alt) * cos(lat) * cos(lon),
+          (Rew + alt)* cos(lat)* sin(lon),
+          ((1 - ecc_sqrd) * Rew + alt)* sin(lat);
 
-    return ecef;
+  return ecef;
 }
 
 
@@ -764,6 +788,7 @@ Vector3f lla2ecef(const Vector3f& lla, const bool& angle_unit)
 
   https://en.wikipedia.org/wiki/Geographic_coordinate_system
   https://en.wikipedia.org/wiki/Earth-centered,_Earth-fixed_coordinate_system
+  https://www.mathworks.com/help/aeroblks/ecefpositiontolla.html
 
   Arguments:
   ----------
@@ -777,48 +802,47 @@ Vector3f lla2ecef(const Vector3f& lla, const bool& angle_unit)
 */
 Vector3f ecef2lla(const Vector3f& ecef, const bool& angle_unit)
 {
-    float x = ecef(0);
-    float y = ecef(1);
-    float z = ecef(2);
+  float x = ecef(0);
+  float y = ecef(1);
+  float z = ecef(2);
 
-    float x_sqrd = pow(x, 2);
-    float y_sqrd = pow(y, 2);
-    float z_sqrd = pow(z, 2);
+  float x_sqrd = pow(x, 2);
+  float y_sqrd = pow(y, 2);
 
-    float lon = atan2(y, x);
+  float lon = atan2(y, x);
+  float lat = 400;
 
-    float p      = sqrt(x_sqrd + y_sqrd);
-    float p_sqrd = pow(p, 2);
-    float F      = 54 * b_sqrd * z_sqrd;
-    float G      = p_sqrd + ((1 - ecc_sqrd) * z_sqrd) - (ecc_sqrd * (a_sqrd - b_sqrd));
-    float G_sqrd = pow(G, 2);
-    float c      = (pow(ecc, 4) * F * p_sqrd) / pow(G, 3);
-    float c_sqrd = pow(c, 2);
-    float s      = pow(1 + c + sqrt(c_sqrd + (2 * c)), 1.5);
-    float k      = s + 1 + (1 / s);
-    float k_sqrd = pow(k, 2);
-    float P      = F / (3 * k_sqrd * G_sqrd);
-    float Q      = sqrt(1 + (2 * pow(ecc, 4) * P));
-    float r0     = ((-P * ecc_sqrd * p) / (1 + Q)) + sqrt((0.5 * a_sqrd * (1 + (1 / Q))) - ((P * (1 - ecc_sqrd) * z_sqrd) / (Q * (1 + Q))) - (0.5 * P * p_sqrd));
-    float U      = sqrt(pow(p - (ecc_sqrd * r0), 2) + z_sqrd);
-    float V      = sqrt(pow(p - (ecc_sqrd * r0), 2) + ((1 - ecc_sqrd) * z_sqrd));
-    float z0     = (b_sqrd * z) / (a * V);
+  float s = sqrt(x_sqrd + y_sqrd);
+  float beta = atan2(z, (1 - f) * s);
+  float mu_bar = atan2(z + (((ecc_sqrd * (1 - f)) / (1 - ecc_sqrd)) * a * pow(sin(beta), 3)),
+                       s - (ecc_sqrd * a * pow(cos(beta), 3)));
+  
+  while (abs(lat - mu_bar) > 1e-10)
+  {
+    lat  = mu_bar;
+    beta = atan2((1 - f) * sin(lat),
+                 cos(lat));
+    mu_bar = atan2(z + (((ecc_sqrd * (1 - f)) / (1 - ecc_sqrd)) * a * pow(sin(beta), 3)),
+                   s - (ecc_sqrd * a * pow(cos(beta), 3)));
+  }
 
-    float h   = U * (1 - (b_sqrd / (a * V)));
-    float lat = atan2(z + (ecc_prime_sqrd * z0), p);
+  lat = mu_bar;
 
-    if (angle_unit == DEGREES)
-    {
-        lat = rad2deg(lat);
-        lon = rad2deg(lon);
-    }
+  float N = a / sqrt(1 - (ecc_sqrd * pow(sin(lat), 2)));
+  float h = (s * cos(lat)) + ((z + (ecc_sqrd * N * sin(lat))) * sin(lat)) - N;
 
-    Vector3f lla;
-    lla << lat,
-           lon,
-           h;
+  if (angle_unit == DEGREES)
+  {
+    lat = rad2deg(lat);
+    lon = rad2deg(lon);
+  }
 
-    return lla;
+  Vector3f lla;
+  lla << lat,
+          lon,
+          h;
+
+  return lla;
 }
 
 
@@ -847,30 +871,30 @@ Vector3f ecef2lla(const Vector3f& ecef, const bool& angle_unit)
 */
 Matrix3f ecef2ned_dcm(const Vector3f& lla, const bool& angle_unit)
 {
-    float lat = lla(0);
-    float lon = lla(1);
+  float lat = lla(0);
+  float lon = lla(1);
 
-    if (angle_unit == DEGREES)
-    {
-        lat = deg2rad(lat);
-        lon = deg2rad(lon);
-    }
+  if (angle_unit == DEGREES)
+  {
+    lat = deg2rad(lat);
+    lon = deg2rad(lon);
+  }
 
-    Matrix3f C;
+  Matrix3f C;
 
-    C(0, 0) = -sin(lat) * cos(lon);
-    C(0, 1) = -sin(lat) * sin(lon);
-    C(0, 2) = cos(lat);
+  C(0, 0) = -sin(lat) * cos(lon);
+  C(0, 1) = -sin(lat) * sin(lon);
+  C(0, 2) = cos(lat);
 
-    C(1, 0) = -sin(lon);
-    C(1, 1) = cos(lon);
-    C(1, 2) = 0;
+  C(1, 0) = -sin(lon);
+  C(1, 1) = cos(lon);
+  C(1, 2) = 0;
 
-    C(2, 0) = -cos(lat) * cos(lon);
-    C(2, 1) = -cos(lat) * sin(lon);
-    C(2, 2) = -sin(lat);
+  C(2, 0) = -cos(lat) * cos(lon);
+  C(2, 1) = -cos(lat) * sin(lon);
+  C(2, 2) = -sin(lat);
 
-    return C;
+  return C;
 }
 
 
@@ -895,12 +919,14 @@ Matrix3f ecef2ned_dcm(const Vector3f& lla, const bool& angle_unit)
   --------
   * Vector3f ned - NED coordinate in meters
 */
-Vector3f ecef2ned(const Vector3f& ecef, const Vector3f& lla_ref, const bool& angle_unit)
+Vector3f ecef2ned(const Vector3f& ecef,
+                  const Vector3f& lla_ref,
+                  const bool& angle_unit)
 {
-    Vector3f ecef_ref = lla2ecef(lla_ref, angle_unit);
-    Matrix3f C        = ecef2ned_dcm(lla_ref, angle_unit);
+  Vector3f ecef_ref = lla2ecef(lla_ref, angle_unit);
+  Matrix3f C        = ecef2ned_dcm(lla_ref, angle_unit);
 
-    return C * (ecef - ecef_ref);
+  return C * (ecef - ecef_ref);
 }
 
 
@@ -924,12 +950,14 @@ Vector3f ecef2ned(const Vector3f& ecef, const Vector3f& lla_ref, const bool& ang
   --------
   * Vector3f ned - NED coordinate in meters
 */
-Vector3f lla2ned(const Vector3f& lla, const Vector3f& lla_ref, const bool& angle_unit)
+Vector3f lla2ned(const Vector3f& lla,
+                 const Vector3f& lla_ref,
+                 const bool& angle_unit)
 {
-    Vector3f ecef = lla2ecef(lla, angle_unit);
-    Vector3f ned  = ecef2ned(ecef, lla_ref, angle_unit);
+  Vector3f ecef = lla2ecef(lla, angle_unit);
+  Vector3f ned  = ecef2ned(ecef, lla_ref, angle_unit);
 
-    return ned;
+  return ned;
 }
 
 
@@ -954,35 +982,37 @@ Vector3f lla2ned(const Vector3f& lla, const Vector3f& lla_ref, const bool& angle
   --------
   * Vector3f ecef - ECEF coordinate in meters
 */
-Vector3f ned2ecef(const Vector3f& ned, const Vector3f& lla_ref, const bool& angle_unit)
+Vector3f ned2ecef(const Vector3f& ned,
+                  const Vector3f& lla_ref,
+                  const bool& angle_unit)
 {
-    float lat_ref = lla_ref(0);
-    float lon_ref = lla_ref(1);
+  float lat_ref = lla_ref(0);
+  float lon_ref = lla_ref(1);
 
-    if (angle_unit == DEGREES)
-    {
-        lat_ref = deg2rad(lat_ref);
-        lon_ref = deg2rad(lon_ref);
-    }
+  if (angle_unit == DEGREES)
+  {
+    lat_ref = deg2rad(lat_ref);
+    lon_ref = deg2rad(lon_ref);
+  }
 
-    Matrix3f C(3, 3);
+  Matrix3f C(3, 3);
 
-    C(0, 0) = -sin(lat_ref) * cos(lon_ref);
-    C(0, 1) = -sin(lat_ref) * sin(lon_ref);
-    C(0, 2) =  cos(lat_ref);
+  C(0, 0) = -sin(lat_ref) * cos(lon_ref);
+  C(0, 1) = -sin(lat_ref) * sin(lon_ref);
+  C(0, 2) =  cos(lat_ref);
 
-    C(1, 0) = -sin(lon_ref);
-    C(1, 1) =  cos(lon_ref);
-    C(1, 2) =  0;
+  C(1, 0) = -sin(lon_ref);
+  C(1, 1) =  cos(lon_ref);
+  C(1, 2) =  0;
 
-    C(2, 0) = -cos(lat_ref) * cos(lon_ref);
-    C(2, 1) = -cos(lat_ref) * sin(lon_ref);
-    C(2, 2) = -sin(lat_ref);
+  C(2, 0) = -cos(lat_ref) * cos(lon_ref);
+  C(2, 1) = -cos(lat_ref) * sin(lon_ref);
+  C(2, 2) = -sin(lat_ref);
 
-    Vector3f ecef;
-    ecef = C.transpose() * ned;
+  Vector3f ecef;
+  ecef = C.transpose() * ned;
 
-    return ecef;
+  return ecef;
 }
 
 
@@ -1006,15 +1036,17 @@ Vector3f ned2ecef(const Vector3f& ned, const Vector3f& lla_ref, const bool& angl
   --------
   * Vector3f lla - LLA coordinate (altitude in meters)
 */
-Vector3f ned2lla(const Vector3f& ned, const Vector3f& lla_ref, const bool& angle_unit)
+Vector3f ned2lla(const Vector3f& ned,
+                 const Vector3f& lla_ref,
+                 const bool& angle_unit)
 {
-    Vector3f ecef     = ned2ecef(ned, lla_ref, angle_unit);
-    Vector3f ecef_ref = lla2ecef(lla_ref, angle_unit);
-    ecef += ecef_ref;
+  Vector3f ecef     = ned2ecef(ned, lla_ref, angle_unit);
+  Vector3f ecef_ref = lla2ecef(lla_ref, angle_unit);
+  ecef += ecef_ref;
 
-    Vector3f lla = ecef2lla(ecef, angle_unit);
+  Vector3f lla = ecef2lla(ecef, angle_unit);
 
-    return lla;
+  return lla;
 }
 
 
@@ -1043,16 +1075,16 @@ Vector3f ned2lla(const Vector3f& ned, const Vector3f& lla_ref, const bool& angle
 */
 Matrix4f poseMat(const Matrix3f& dcm, const Vector3f& t)
 {
-    Matrix4f poseMatrix;
-    poseMatrix << 0, 0, 0, 0,
-                  0, 0, 0, 0,
-                  0, 0, 0, 0,
-                  0, 0, 0, 0;
-    poseMatrix(seq(0, 2), seq(0, 2)) << dcm;
-    poseMatrix(seq(0, 2), 3) << t;
-    poseMatrix(3, 3) = 1;
+  Matrix4f poseMatrix;
+  poseMatrix << 0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0;
+  poseMatrix(seq(0, 2), seq(0, 2)) << dcm;
+  poseMatrix(seq(0, 2), 3) << t;
+  poseMatrix(3, 3) = 1;
 
-    return poseMatrix;
+  return poseMatrix;
 }
 
 
@@ -1077,10 +1109,10 @@ Matrix4f poseMat(const Matrix3f& dcm, const Vector3f& t)
 */
 Matrix3f pose2dcm(const Matrix4f& poseMatrix)
 {
-    Matrix3f dcm;
-    dcm << poseMatrix(seq(0, 2), seq(0, 2));
+  Matrix3f dcm;
+  dcm << poseMatrix(seq(0, 2), seq(0, 2));
 
-    return dcm;
+  return dcm;
 }
 
 
@@ -1104,10 +1136,10 @@ Matrix3f pose2dcm(const Matrix4f& poseMatrix)
 */
 Vector3f pose2t(const Matrix4f& poseMatrix)
 {
-    Vector3f t;
-    t << poseMatrix(seq(0, 2), 3);
+  Vector3f t;
+  t << poseMatrix(seq(0, 2), 3);
 
-    return t;
+  return t;
 }
 
 
@@ -1132,10 +1164,10 @@ Vector3f pose2t(const Matrix4f& poseMatrix)
 */
 Matrix4f reversePoseMat(const Matrix4f& poseMatrix)
 {
-    Matrix3f dcm = pose2dcm(poseMatrix);
-    Vector3f t   = pose2t(poseMatrix);
+  Matrix3f dcm = pose2dcm(poseMatrix);
+  Vector3f t   = pose2t(poseMatrix);
 
-    return poseMat(dcm.transpose(), dcm.transpose() * -t);
+  return poseMat(dcm.transpose(), dcm.transpose() * -t);
 }
 
 
@@ -1172,71 +1204,71 @@ Matrix4f reversePoseMat(const Matrix4f& poseMatrix)
 */
 Matrix4f poseMatDeriv(const Matrix4f& poseMatrix, const int& derivType)
 {
-    Matrix4f derivPose;
-    Matrix3f dcm = pose2dcm(poseMatrix);
-    Vector3f vec;
+  Matrix4f derivPose;
+  Matrix3f dcm = pose2dcm(poseMatrix);
+  Vector3f vec;
 
-    switch(derivType)
+  switch(derivType)
+  {
+    case dRx:
     {
-        case dRx:
-        {
-            vec << 1, 0, 0;
+      vec << 1, 0, 0;
 
-            derivPose(seq(0, 2), seq(0, 2)) << skew(vec) * dcm;
-            break;
-        }
-
-        case dRy:
-        {
-            vec << 0, 1, 0;
-
-            derivPose(seq(0, 2), seq(0, 2)) << skew(vec) * dcm;
-            break;
-        }
-
-        case dRz:
-        {
-            vec << 0, 0, 1;
-
-            derivPose(seq(0, 2), seq(0, 2)) << skew(vec) * dcm;
-            break;
-        }
-
-        case dtx:
-        {
-            vec << 1, 0, 0;
-
-            Matrix4f tempPose;
-            tempPose(3, seq(0, 2)) << vec;
-
-            derivPose << tempPose * poseMatrix;
-            break;
-        }
-
-        case dty:
-        {
-            vec << 0, 1, 0;
-
-            Matrix4f tempPose;
-            tempPose(3, seq(0, 2)) << vec;
-
-            derivPose << tempPose * poseMatrix;
-            break;
-        }
-
-        case dtz:
-        {
-            vec << 0, 0, 1;
-
-            Matrix4f tempPose;
-            tempPose(3, seq(0, 2)) << vec;
-
-            derivPose << tempPose * poseMatrix;
-            break;
-        }
+      derivPose(seq(0, 2), seq(0, 2)) << skew(vec) * dcm;
+      break;
     }
 
-    return derivPose;
+    case dRy:
+    {
+      vec << 0, 1, 0;
+
+      derivPose(seq(0, 2), seq(0, 2)) << skew(vec) * dcm;
+      break;
+    }
+
+    case dRz:
+    {
+      vec << 0, 0, 1;
+
+      derivPose(seq(0, 2), seq(0, 2)) << skew(vec) * dcm;
+      break;
+    }
+
+    case dtx:
+    {
+      vec << 1, 0, 0;
+
+      Matrix4f tempPose;
+      tempPose(3, seq(0, 2)) << vec;
+
+      derivPose << tempPose * poseMatrix;
+      break;
+    }
+
+    case dty:
+    {
+      vec << 0, 1, 0;
+
+      Matrix4f tempPose;
+      tempPose(3, seq(0, 2)) << vec;
+
+      derivPose << tempPose * poseMatrix;
+      break;
+    }
+
+    case dtz:
+    {
+      vec << 0, 0, 1;
+
+      Matrix4f tempPose;
+      tempPose(3, seq(0, 2)) << vec;
+
+      derivPose << tempPose * poseMatrix;
+      break;
+    }
+  }
+
+  return derivPose;
 }
 
 
@@ -1266,16 +1298,18 @@ Matrix4f poseMatDeriv(const Matrix4f& poseMatrix, const int& derivType)
   --------
   * Vector3f new_x - The vector/point transformed to the new coordinate frame
 */
-Vector3f transformPt(const Matrix3f& dcm, const Vector3f& t, const Vector3f& x)
+Vector3f transformPt(const Matrix3f& dcm,
+                     const Vector3f& t,
+                     const Vector3f& x)
 {
-    Vector4f x_1;
-    x_1 << x;
-    x_1(3) = 1;
+  Vector4f x_1;
+  x_1 << x;
+  x_1(3) = 1;
 
-    Vector4f new_x_1 = poseMat(dcm, t) * x_1;
-    Vector3f new_x   = new_x_1(seq(0, 2));
+  Vector4f new_x_1 = poseMat(dcm, t) * x_1;
+  Vector3f new_x   = new_x_1(seq(0, 2));
 
-    return new_x;
+  return new_x;
 }
 
 
@@ -1304,14 +1338,14 @@ Vector3f transformPt(const Matrix3f& dcm, const Vector3f& t, const Vector3f& x)
 */
 Vector3f transformPt(const Matrix4f& poseMatrix, const Vector3f& x)
 {
-    Vector4f x_1;
-    x_1 << x;
-    x_1(3) = 1;
+  Vector4f x_1;
+  x_1 << x;
+  x_1(3) = 1;
 
-    Vector4f new_x_1 = poseMatrix * x_1;
-    Vector3f new_x = new_x_1(seq(0, 2));
+  Vector4f new_x_1 = poseMatrix * x_1;
+  Vector3f new_x = new_x_1(seq(0, 2));
 
-    return new_x;
+  return new_x;
 }
 
 
@@ -1335,13 +1369,13 @@ Vector3f transformPt(const Matrix4f& poseMatrix, const Vector3f& x)
 */
 Matrix3f skew(const Vector3f& w)
 {
-    Matrix3f C;
+  Matrix3f C;
 
-    C << 0.0, -w(2),  w(1),
-        w(2),   0.0, -w(0),
-       -w(1),  w(0),   0.0;
+  C << 0.0,  -w(2),  w(1),
+       w(2),   0.0, -w(0),
+      -w(1),  w(0),   0.0;
 
-    return C;
+  return C;
 }
 
 
@@ -1366,29 +1400,31 @@ Matrix3f skew(const Vector3f& w)
   --------
   * float bearing - The bearing between the two given LLA coordinates
 */
-float bearingLla(const Vector3f& lla_1, const Vector3f& lla_2, const bool& angle_unit)
+float bearingLla(const Vector3f& lla_1,
+                 const Vector3f& lla_2,
+                 const bool& angle_unit)
 {
-    float lat_1 = lla_1(0);
-    float lon_1 = lla_1(1);
+  float lat_1 = lla_1(0);
+  float lon_1 = lla_1(1);
 
-    float lat_2 = lla_2(0);
-    float lon_2 = lla_2(1);
+  float lat_2 = lla_2(0);
+  float lon_2 = lla_2(1);
 
-    if (angle_unit == DEGREES)
-    {
-        lat_1 = deg2rad(lat_1);
-        lon_1 = deg2rad(lon_1);
+  if (angle_unit == DEGREES)
+  {
+    lat_1 = deg2rad(lat_1);
+    lon_1 = deg2rad(lon_1);
 
-        lat_2 = deg2rad(lat_2);
-        lon_2 = deg2rad(lon_2);
-    }
+    lat_2 = deg2rad(lat_2);
+    lon_2 = deg2rad(lon_2);
+  }
 
-    float deltaLon = lon_2 - lon_1;
+  float deltaLon = lon_2 - lon_1;
 
-    float x = cos(lat_2) * sin(deltaLon);
-    float y = cos(lat_1) * sin(lat_2) - sin(lat_1) * cos(lat_2) * cos(deltaLon);
+  float x = cos(lat_2) * sin(deltaLon);
+  float y = cos(lat_1) * sin(lat_2) - sin(lat_1) * cos(lat_2) * cos(deltaLon);
 
-    return fmod(rad2deg(atan2(x, y)) + 360, 360);
+  return fmod(rad2deg(atan2(x, y)) + 360, 360);
 }
 
 
@@ -1414,16 +1450,16 @@ float bearingLla(const Vector3f& lla_1, const Vector3f& lla_2, const bool& angle
 */
 float bearingNed(const Vector3f& ned_1, const Vector3f& ned_2)
 {
-    float n_1 = ned_1(0);
-    float e_1 = ned_1(1);
+  float n_1 = ned_1(0);
+  float e_1 = ned_1(1);
 
-    float n_2 = ned_2(0);
-    float e_2 = ned_2(1);
+  float n_2 = ned_2(0);
+  float e_2 = ned_2(1);
 
-    float x = e_2 - e_1;
-    float y = n_2 - n_1;
+  float x = e_2 - e_1;
+  float y = n_2 - n_1;
 
-    return fmod(rad2deg(atan2(x, y)) + 360, 360);
+  return fmod(rad2deg(atan2(x, y)) + 360, 360);
 }
 
 
@@ -1448,32 +1484,34 @@ float bearingNed(const Vector3f& ned_1, const Vector3f& ned_2)
   --------
   * float dist - The distance between the two given LLA coordinates in meters
 */
-double distanceLla(const Vector3f& lla_1, const Vector3f& lla_2, const bool& angle_unit)
+double distanceLla(const Vector3f& lla_1,
+                   const Vector3f& lla_2,
+                   const bool& angle_unit)
 {
-    float lat_1 = lla_1(0);
-    float lon_1 = lla_1(1);
+  float lat_1 = lla_1(0);
+  float lon_1 = lla_1(1);
 
-    float lat_2 = lla_2(0);
-    float lon_2 = lla_2(1);
+  float lat_2 = lla_2(0);
+  float lon_2 = lla_2(1);
 
-    if (angle_unit == DEGREES)
-    {
-        lat_1 = deg2rad(lat_1);
-        lon_1 = deg2rad(lon_1);
+  if (angle_unit == DEGREES)
+  {
+    lat_1 = deg2rad(lat_1);
+    lon_1 = deg2rad(lon_1);
 
-        lat_2 = deg2rad(lat_2);
-        lon_2 = deg2rad(lon_2);
-    }
+    lat_2 = deg2rad(lat_2);
+    lon_2 = deg2rad(lon_2);
+  }
 
-    double deltaLat = lat_2 - lat_1;
-    double deltaLon = lon_2 - lon_1;
+  double deltaLat = lat_2 - lat_1;
+  double deltaLon = lon_2 - lon_1;
 
-    double _a = (sin(deltaLat / 2) * sin(deltaLat / 2)) + cos(lat_1) * cos(lat_2) * (sin(deltaLon / 2)) * (sin(deltaLon / 2));
+  double _a = (sin(deltaLat / 2) * sin(deltaLat / 2)) + cos(lat_1) * cos(lat_2) * (sin(deltaLon / 2)) * (sin(deltaLon / 2));
 
-    float azimuth = bearingLla(lla_1, lla_2, angle_unit);
-    float radius  = earthAzimRad(lla_1(0), azimuth, angle_unit);
+  float azimuth = bearingLla(lla_1, lla_2, angle_unit);
+  float radius  = earthAzimRad(lla_1(0), azimuth, angle_unit);
 
-    return 2 * radius * atan2(sqrt(_a), sqrt(1 - _a));
+  return 2 * radius * atan2(sqrt(_a), sqrt(1 - _a));
 }
 
 
@@ -1497,8 +1535,8 @@ double distanceLla(const Vector3f& lla_1, const Vector3f& lla_2, const bool& ang
 */
 float distanceNed(const Vector3f& ned_1, const Vector3f& ned_2)
 {
-    Vector3f out = ned_2 - ned_1;
-    return out.norm();
+  Vector3f out = ned_2 - ned_1;
+  return out.norm();
 }
 
 
@@ -1522,12 +1560,12 @@ float distanceNed(const Vector3f& ned_1, const Vector3f& ned_2)
 */
 float distanceNedHoriz(const Vector3f& ned_1, const Vector3f& ned_2)
 {
-    Vector2f out;
+  Vector2f out;
 
-    out << ned_2(0) - ned_1(0),
-           ned_2(1) - ned_1(1);
+  out << ned_2(0) - ned_1(0),
+         ned_2(1) - ned_1(1);
 
-    return out.norm();
+  return out.norm();
 }
 
 
@@ -1551,7 +1589,7 @@ float distanceNedHoriz(const Vector3f& ned_1, const Vector3f& ned_2)
 */
 float distanceNedVert(const Vector3f& ned_1, const Vector3f& ned_2)
 {
-    return ned_2(2) - ned_1(2);
+  return ned_2(2) - ned_1(2);
 }
 
 
@@ -1576,8 +1614,8 @@ float distanceNedVert(const Vector3f& ned_1, const Vector3f& ned_2)
 */
 float distanceEcef(const Vector3f& ecef_1, const Vector3f& ecef_2)
 {
-    Vector3f out = ecef_2 - ecef_1;
-    return out.norm();
+  Vector3f out = ecef_2 - ecef_1;
+  return out.norm();
 }
 
 
@@ -1602,29 +1640,31 @@ float distanceEcef(const Vector3f& ecef_1, const Vector3f& ecef_2)
   --------
   * float elevation - The elevation angle between the two given LLA coordinates
 */
-float elevationLla(const Vector3f& lla_1, const Vector3f& lla_2, const bool& angle_unit)
+float elevationLla(const Vector3f& lla_1,
+                  const Vector3f& lla_2,
+                  const bool& angle_unit)
 {
-    float lat_1 = lla_1(0);
-    float lon_1 = lla_1(1);
-    float alt_1 = lla_1(2);
+  float lat_1 = lla_1(0);
+  float lon_1 = lla_1(1);
+  float alt_1 = lla_1(2);
 
-    float lat_2 = lla_2(0);
-    float lon_2 = lla_2(1);
-    float alt_2 = lla_2(2);
+  float lat_2 = lla_2(0);
+  float lon_2 = lla_2(1);
+  float alt_2 = lla_2(2);
 
-    if (angle_unit == DEGREES)
-    {
-        lat_1 = deg2rad(lat_1);
-        lon_1 = deg2rad(lon_1);
+  if (angle_unit == DEGREES)
+  {
+    lat_1 = deg2rad(lat_1);
+    lon_1 = deg2rad(lon_1);
 
-        lat_2 = deg2rad(lat_2);
-        lon_2 = deg2rad(lon_2);
-    }
+    lat_2 = deg2rad(lat_2);
+    lon_2 = deg2rad(lon_2);
+  }
 
-    float dist   = distanceLla(lla_1, lla_2, angle_unit);
-    float height = alt_2 - alt_1;
+  float dist   = distanceLla(lla_1, lla_2, angle_unit);
+  float height = alt_2 - alt_1;
 
-    return rad2deg(atan2(height, dist));
+  return rad2deg(atan2(height, dist));
 }
 
 
@@ -1650,13 +1690,13 @@ float elevationLla(const Vector3f& lla_1, const Vector3f& lla_2, const bool& ang
 */
 float elevationNed(const Vector3f& ned_1, const Vector3f& ned_2)
 {
-    float d_1 = -ned_1(2);
-    float d_2 = -ned_2(2);
+  float d_1 = -ned_1(2);
+  float d_2 = -ned_2(2);
 
-    float dist   = distanceNed(ned_1, ned_2);
-    float height = d_2 - d_1;
+  float dist   = distanceNed(ned_1, ned_2);
+  float height = d_2 - d_1;
 
-    return rad2deg(atan2(height, dist));
+  return rad2deg(atan2(height, dist));
 }
 
 
@@ -1685,37 +1725,42 @@ float elevationNed(const Vector3f& ned_1, const Vector3f& ned_2)
   --------
   * Vector3f& out - New LLA coordinate (altitude in meters)
 */
-Vector3f LDAE2lla(const Vector3f& lla, const float& dist, const float& _azimuth, const float& _elevation, const bool& angle_unit)
+Vector3f LDAE2lla(const Vector3f& lla,
+                  const float& dist,
+                  const float& _azimuth,
+                  const float& _elevation,
+                  const bool& angle_unit)
 {
-    float lat = lla(0);
-    float lon = lla(1);
-    float alt = lla(2);
+  float lat = lla(0);
+  float lon = lla(1);
+  float alt = lla(2);
 
-    float azimuth   = _azimuth;
-    float elevation = _elevation;
+  float azimuth   = _azimuth;
+  float elevation = _elevation;
 
-    if (angle_unit == DEGREES)
-    {
-        lat = deg2rad(lat);
-        lon = deg2rad(lon);
+  if (angle_unit == DEGREES)
+  {
+    lat = deg2rad(lat);
+    lon = deg2rad(lon);
 
-        azimuth   = deg2rad(azimuth);
-        elevation = deg2rad(elevation);
-    }
+    azimuth   = deg2rad(azimuth);
+    elevation = deg2rad(elevation);
+  }
 
-    float radius   = earthAzimRad(lla(0), _azimuth, angle_unit);
-    float adj_dist = dist / radius;
+  float radius   = earthAzimRad(lla(0), _azimuth, angle_unit);
+  float adj_dist = dist / radius;
 
-    float lat_2 = asin(sin(lat) * cos(adj_dist) + cos(lat) * sin(adj_dist) * cos(azimuth));
-    float lon_2 = lon + atan2(sin(azimuth) * sin(adj_dist) * cos(lat), cos(adj_dist) - sin(lat) * sin(lat_2));
+  float lat_2 = asin(sin(lat) * cos(adj_dist) + cos(lat) * sin(adj_dist) * cos(azimuth));
+  float lon_2 = lon + atan2(sin(azimuth) * sin(adj_dist) * cos(lat),
+                            cos(adj_dist) - sin(lat) * sin(lat_2));
 
-    Vector3f out;
+  Vector3f out;
 
-    out << rad2deg(lat_2),
-           rad2deg(lon_2),
-           alt + (dist * tan(elevation));
+  out << rad2deg(lat_2),
+         rad2deg(lon_2),
+         alt + (dist * tan(elevation));
 
-    return out;
+  return out;
 }
 
 
@@ -1743,26 +1788,30 @@ Vector3f LDAE2lla(const Vector3f& lla, const float& dist, const float& _azimuth,
   --------
   * Vector3f& out - New NED coordinate in meters
 */
-Vector3f NDAE2ned(const Vector3f& ned, const float& dist, const float& _azimuth, const float& _elevation, const bool& angle_unit)
+Vector3f NDAE2ned(const Vector3f& ned,
+                  const float& dist,
+                  const float& _azimuth,
+                  const float& _elevation,
+                  const bool& angle_unit)
 {
-    float n = ned(0);
-    float e = ned(1);
-    float d = ned(2);
+  float n = ned(0);
+  float e = ned(1);
+  float d = ned(2);
 
-    float azimuth   = _azimuth;
-    float elevation = _elevation;
+  float azimuth   = _azimuth;
+  float elevation = _elevation;
 
-    if (angle_unit == DEGREES)
-    {
-        azimuth   = deg2rad(azimuth);
-        elevation = deg2rad(elevation);
-    }
+  if (angle_unit == DEGREES)
+  {
+    azimuth   = deg2rad(azimuth);
+    elevation = deg2rad(elevation);
+  }
 
-    Vector3f out;
+  Vector3f out;
 
-    out << n + dist * cos(azimuth),
-           e + dist * sin(azimuth),
-           d + (dist * tan(elevation));
+  out << n + dist * cos(azimuth),
+         e + dist * sin(azimuth),
+         d + (dist * tan(elevation));
 
-    return out;
+  return out;
 }
