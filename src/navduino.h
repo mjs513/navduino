@@ -226,7 +226,7 @@ public:
 	void update_s_R_p(const Matrix3f& _s_R_p_);
 	void update_p_R_s(const Matrix3f& _p_R_s_);
 	void update_s_P_p(const Matrix4f& _s_P_p_);
-	void update_p_P_s(const Matrix4f& _p_P_d_);
+	void update_p_P_s(const Matrix4f& _p_P_s_);
 
 
 
