@@ -244,11 +244,6 @@ Vector3f quat2angle(const Quaternionf& quat,
   Arguments:
   ----------
   * const Quaternionf quat       - Quaternion that describes the rotation
-  * const bool& angle_unit       - Unit of the euler angles (rad or degrees)
-  * const bool& NED_to_body      - Rotate either to or from the NED frame
-  * const int& rotation_sequence - The order in which the euler angles are applied
-                                   to the rotation. 321 is the standard rotation
-                                   sequence for aerial navigation
 
   Returns:
   --------
@@ -274,11 +269,6 @@ Matrix3f quat2dcm(const Quaternionf& quat)
   Arguments:
   ----------
   * const Matrix3f& dcm          - Direction cosine matrix (rotation matix)
-  * const bool& angle_unit       - Unit of the euler angles (rad or degrees)
-  * const bool& NED_to_body      - Rotate either to or from the NED frame
-  * const int& rotation_sequence - The order in which the euler angles are applied
-                                   to the rotation. 321 is the standard rotation
-                                   sequence for aerial navigation
 
   Returns:
   --------
